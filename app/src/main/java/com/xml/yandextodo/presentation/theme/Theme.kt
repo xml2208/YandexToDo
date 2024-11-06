@@ -1,6 +1,5 @@
-package com.xml.yandextodo.ui.theme
+package com.xml.yandextodo.presentation.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -12,25 +11,37 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = PrimaryDark,
+    secondary = SecondaryDark,
+    tertiary = TertiaryDark,
+    background = BackgroundPrimaryDark,
+    onBackground = BackgroundSecondaryDark,
+    onSurface = BackgroundElevatedDark,
+    onErrorContainer = DisableDark,
+    errorContainer = RedDark,
+    outlineVariant = OverlayDark,
+    inverseSurface = GreenDark,
+    inversePrimary = SeparatorDark,
+    surfaceContainer = GrayLightDark,
+    surfaceContainerHighest = GrayDark,
+    surface = BlueDark,
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary = LabelPrimaryLight,
+    secondary = LabelSecondaryLight,
+    tertiary = LabelTertiaryLight,
+    background = BackgroundPrimaryLight,
+    onBackground = BackgroundSecondaryLight,
+    onErrorContainer = DisableLight,
+    errorContainer = RedLight,
+    outlineVariant = OverlayLight,
+    inverseSurface = GreenLight,
+    inversePrimary = SeparatorLight,
+    surfaceContainer = GrayLight,
+    surfaceContainerHighest = Gray,
+    onSurface = BackgroundElevatedLight,
+    surface = BlueLight,
 )
 
 @Composable

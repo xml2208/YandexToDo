@@ -1,0 +1,33 @@
+package com.xml.yandextodo.presentation.theme
+
+import androidx.compose.ui.graphics.Color
+
+val SeparatorLight = Color(0x33000000)
+val OverlayLight = Color(0x0F000000)
+val LabelPrimaryLight = Color(0xFF000000)
+val LabelSecondaryLight = Color(0x99FFFFFF)
+val LabelTertiaryLight = Color(0x4D000000)
+val DisableLight = Color(0x26000000)
+val RedLight = Color(0xFFFF3B30)
+val GreenLight = Color(0xFF34C759)
+val BlueLight = Color(0xFF007AFF)
+val Gray = Color(0xFF8E8E93)
+val GrayLight = Color(0xFFD1D1D6)
+val BackgroundPrimaryLight = Color(0xFFF7F6F2)
+val BackgroundSecondaryLight = Color(0xFFFFFFFF)
+val BackgroundElevatedLight = Color(0xFFFFFFFF)
+
+val SeparatorDark = Color(0x33FFFFFF)
+val OverlayDark = Color(0x52000000)
+val PrimaryDark = Color(0xFFFFFFFF)
+val SecondaryDark = Color(0x99FFFFFF)
+val TertiaryDark = Color(0x66FFFFFF)
+val DisableDark = Color(0x26FFFFFF)
+val RedDark = Color(0xFFFF453A)
+val GreenDark = Color(0xFF32D74B)
+val BlueDark = Color(0xFF0A84FF)
+val GrayDark = Color(0x26FFFFFF)
+val GrayLightDark = Color(0xFF48484A)
+val BackgroundPrimaryDark = Color(0xFF161618)
+val BackgroundSecondaryDark = Color(0xFF252528)
+val BackgroundElevatedDark = Color(0xFF3C3C3F)

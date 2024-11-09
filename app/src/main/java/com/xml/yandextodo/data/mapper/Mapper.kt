@@ -2,24 +2,24 @@ package com.xml.yandextodo.data.mapper
 
 import com.xml.yandextodo.data.local.entity.TaskItemEntity
 import com.xml.yandextodo.data.model.Importance
-import com.xml.yandextodo.data.model.TaskItem
+import com.xml.yandextodo.data.model.TodoItem
 import java.util.Date
 
-object Mapper {
+class Mapper {
 
-    fun toEntity(taskItem: TaskItem): TaskItemEntity {
+    fun toEntity(todoItem: TodoItem): TaskItemEntity {
         return TaskItemEntity(
-            id = taskItem.id,
-            text = taskItem.text,
-            importance = taskItem.importance.name,
-            deadline = taskItem.deadline?.time,
-            isCompleted = taskItem.isCompleted,
-            createdAt = taskItem.createdAt?.time
+            id = todoItem.id,
+            text = todoItem.text,
+            importance = todoItem.importance.name,
+            deadline = todoItem.deadline?.time,
+            isCompleted = todoItem.isCompleted,
+            createdAt = todoItem.createdAt?.time
         )
     }
 
-    fun toDomain(taskItemEntity: TaskItemEntity): TaskItem {
-        return TaskItem(
+    fun toDomain(taskItemEntity: TaskItemEntity): TodoItem {
+        return TodoItem(
             id = taskItemEntity.id,
             text = taskItemEntity.text,
             importance = Importance.valueOf(taskItemEntity.importance),
@@ -29,7 +29,7 @@ object Mapper {
         )
     }
 
-    fun toDomainList(taskItemEntities: List<TaskItemEntity>): List<TaskItem> {
+    fun toDomainList(taskItemEntities: List<TaskItemEntity>): List<TodoItem> {
         return taskItemEntities.map { toDomain(it) }
     }
 

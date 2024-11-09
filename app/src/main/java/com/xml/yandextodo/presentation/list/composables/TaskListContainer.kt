@@ -30,13 +30,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xml.yandextodo.R
 import com.xml.yandextodo.data.model.Importance
-import com.xml.yandextodo.data.model.TaskItem
+import com.xml.yandextodo.data.model.TodoItem
 
 @Composable
 fun TaskListContainer(
     listState: LazyListState,
-    tasks: List<TaskItem>,
-    onCheckedChange: (TaskItem) -> Unit,
+    tasks: List<TodoItem>,
+    onCheckedChange: (TodoItem) -> Unit,
     onEditTask: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -53,7 +53,7 @@ fun TaskListContainer(
                     modifier = Modifier
                         .padding(horizontal = 16.dp, vertical = 12.dp)
                         .background(MaterialTheme.colorScheme.onBackground),
-                    taskItem = task,
+                    todoItem = task,
                     isChecked = task.isCompleted,
                     onCheckedChange = { onCheckedChange(task) },
                     onEditTask = { task.id?.let { it1 -> onEditTask(it1) } }
@@ -65,9 +65,9 @@ fun TaskListContainer(
 
 @Composable
 private fun TaskItemRow(
-    taskItem: TaskItem,
+    todoItem: TodoItem,
     isChecked: Boolean,
-    onCheckedChange: (TaskItem) -> Unit,
+    onCheckedChange: (TodoItem) -> Unit,
     onEditTask: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -77,10 +77,10 @@ private fun TaskItemRow(
     ) {
         Checkbox(
             checked = isChecked,
-            onCheckedChange = { onCheckedChange(taskItem) },
+            onCheckedChange = { onCheckedChange(todoItem) },
             colors = CheckboxDefaults.colors(
                 checkedColor = MaterialTheme.colorScheme.inverseSurface,
-                uncheckedColor = if (taskItem.importance == Importance.High) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.inversePrimary,
+                uncheckedColor = if (todoItem.importance == Importance.High) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.inversePrimary,
                 checkmarkColor = MaterialTheme.colorScheme.background
             )
         )
@@ -89,19 +89,19 @@ private fun TaskItemRow(
             modifier = Modifier
                 .weight(1f)
                 .clickable {
-                    Log.d("xml22", "TaskItemRow: ${taskItem.id}")
-                    taskItem.id?.let { onEditTask(it) }
+                    Log.d("xml22", "TaskItemRow: ${todoItem.id}")
+                    todoItem.id?.let { onEditTask(it) }
                 },
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (taskItem.importance == Importance.High) {
+            if (todoItem.importance == Importance.High) {
                 Text(
                     text = "!!",
                     color = MaterialTheme.colorScheme.errorContainer,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.W400,
                 )
-            } else if (taskItem.importance == Importance.Low) {
+            } else if (todoItem.importance == Importance.Low) {
                 Text(
                     text = "↓",
                     color = MaterialTheme.colorScheme.surfaceContainer,
@@ -109,7 +109,7 @@ private fun TaskItemRow(
                 )
             }
             Text(
-                text = taskItem.text,
+                text = todoItem.text,
                 color = if (isChecked) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
                 fontSize = 16.sp,
                 maxLines = 3,
@@ -132,7 +132,7 @@ private fun TaskItemRow(
 @Composable
 private fun TaskItemWithHighImportance() {
     TaskItemRow(
-        taskItem = TaskItem(
+        todoItem = TodoItem(
             id = 0,
             text = "Go to the bank",
             importance = Importance.High,
@@ -150,7 +150,7 @@ private fun TaskItemWithHighImportance() {
 @Composable
 private fun TaskItemWithLowImportance() {
     TaskItemRow(
-        taskItem = TaskItem(
+        todoItem = TodoItem(
             id = 0,
             text = "Go to the bank",
             importance = Importance.Low,
@@ -168,7 +168,7 @@ private fun TaskItemWithLowImportance() {
 @Composable
 private fun UnCheckedTaskItem() {
     TaskItemRow(
-        taskItem = TaskItem(
+        todoItem = TodoItem(
             id = 0,
             text = "Go to the bank",
             importance = Importance.Low,

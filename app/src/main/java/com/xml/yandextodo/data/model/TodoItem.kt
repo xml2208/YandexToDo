@@ -1,18 +1,20 @@
 package com.xml.yandextodo.data.model
 
 import androidx.compose.ui.graphics.Color
+import com.xml.yandextodo.data.mapper.Mapper
 import java.util.Date
 
-data class TaskItem(
+data class TodoItem(
     val id: Long?,
-    var text: String,
+    val text: String,
     val importance: Importance,
     val deadline: Date?,
-    var isCompleted: Boolean,
+    val isCompleted: Boolean,
     val createdAt: Date?,
+    val modifiedAt: Date? = null,
 ) {
     companion object {
-        val initialTask = TaskItem(
+        val initialTask = TodoItem(
             id = 0L,
             text = "",
             importance = Importance.Initial,
@@ -20,19 +22,14 @@ data class TaskItem(
             isCompleted = false,
             createdAt = null
         )
+        val initialTaskEntity = Mapper().toEntity(initialTask)
     }
 }
 
-enum class Importance {
-    Initial,
-    Low,
-    High;
-
-    fun toText(): String = when (this) {
-        Initial -> "Нет"
-        Low -> "Низкий"
-        High -> "Высокий"
-    }
+enum class Importance(val text: String) {
+    Initial("Нет"),
+    Low("Низкий"),
+    High("Высокий");
 
     fun toColor(initialColor: Color, lowColor: Color, highColor: Color): Color = when (this) {
         Initial -> initialColor

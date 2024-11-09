@@ -24,12 +24,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,7 +46,7 @@ fun AddTaskScreen(
 ) {
     val taskItemState = viewModel.task.collectAsState().value
 
-    LaunchedEffect(taskId) { viewModel.getTask(taskId) }
+    LaunchedEffect(taskId) { viewModel.loadTask(taskId) }
 
     Column(
         modifier = Modifier
@@ -109,35 +107,6 @@ fun AddTaskScreen(
     }
 }
 
-
-@Composable
-private fun AddTaskTopBar(
-    onExit: () -> Unit,
-    onSave: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier.padding(vertical = 16.dp)
-    ) {
-        Icon(
-            modifier = Modifier.clickable(onClick = onExit),
-            painter = painterResource(R.drawable.ic_close),
-            tint = MaterialTheme.colorScheme.primary,
-            contentDescription = null
-        )
-        Spacer(Modifier.weight(1f))
-        Text(
-            modifier = Modifier.clickable { onSave() },
-            text = stringResource(R.string.save).uppercase(),
-            color = MaterialTheme.colorScheme.surface,
-            fontWeight = FontWeight.W500,
-            fontSize = 14.sp,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
-
 @Composable
 private fun PriorityDropdownMenu(
     selectedText: Importance,
@@ -153,7 +122,7 @@ private fun PriorityDropdownMenu(
             .padding(vertical = 4.dp)
     ) {
         Text(
-            text = selectedText.toText(),
+            text = selectedText.text,
             fontSize = 14.sp,
             fontWeight = FontWeight.W400,
             color = selectedText.toColor(
@@ -175,7 +144,7 @@ private fun PriorityDropdownMenu(
                 DropdownMenuItem(
                     text = {
                         Text(
-                            text = option.toText(),
+                            text = option.text,
                             color = option.toColor(
                                 initialColor = MaterialTheme.colorScheme.primary,
                                 lowColor = MaterialTheme.colorScheme.primary,

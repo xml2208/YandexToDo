@@ -3,7 +3,7 @@ package com.xml.yandextodo.presentation.add.view_model
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xml.yandextodo.data.model.Importance
-import com.xml.yandextodo.data.model.TaskItem
+import com.xml.yandextodo.data.model.TodoItem
 import com.xml.yandextodo.data.repository.TodoRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,17 +18,12 @@ class AddTaskViewModel(
     private val todoRepository: TodoRepository,
 ) : ViewModel() {
 
-    private val _task = MutableStateFlow(TaskItem.initialTask)
+    private val _task = MutableStateFlow(TodoItem.initialTask)
     val task = _task.asStateFlow()
 
-    fun getTask(id: Long?) {
+    fun loadTask(id: Long?) {
         viewModelScope.launch(Dispatchers.IO) {
-            val task =
-                if (id != -1L) {
-                    todoRepository.getTaskById(id).first()
-                } else {
-                    TaskItem.initialTask
-                }
+            val task = todoRepository.getTaskById(id).first()
             if (task != null) _task.value = task
         }
     }
@@ -37,11 +32,11 @@ class AddTaskViewModel(
         _task.value = _task.value.copy(text = newTitle)
     }
 
-    fun saveTask(taskItem: TaskItem?) {
+    fun saveTask(todoItem: TodoItem?) {
         viewModelScope.launch(Dispatchers.IO) {
-            val currentTask = taskItem ?: return@launch
+            val currentTask = todoItem ?: return@launch
             if (currentTask.id == null) {
-                todoRepository.addTask(taskItem)
+                todoRepository.addTask(todoItem)
             } else {
                 todoRepository.updateTask(currentTask)
             }

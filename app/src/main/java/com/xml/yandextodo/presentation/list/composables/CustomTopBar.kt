@@ -25,13 +25,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xml.yandextodo.R
-import com.xml.yandextodo.data.model.TaskItem
+import com.xml.yandextodo.data.model.TodoItem
 
 @Composable
 fun CustomTopBar(
     isToolbarVisible: Boolean,
     showCompleted: Boolean,
-    tasks: List<TaskItem>,
+    tasks: List<TodoItem>,
     onThemeUpdated: () -> Unit,
     onHideCompletedClicked: () -> Unit,
     modifier: Modifier = Modifier,

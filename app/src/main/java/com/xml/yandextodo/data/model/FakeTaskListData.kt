@@ -8,7 +8,7 @@ object FakeTaskListData {
 
     val harCodedList =
         mutableListOf(
-            TaskItem(
+            TodoItem(
                 id = 0,
                 text = "Buy groceries",
                 importance = Importance.Low,
@@ -16,7 +16,7 @@ object FakeTaskListData {
                 isCompleted = false,
                 createdAt = null
             ),
-            TaskItem(
+            TodoItem(
                 id = 1,
                 text = "Go to the bank",
                 importance = Importance.High,
@@ -24,7 +24,7 @@ object FakeTaskListData {
                 isCompleted = true,
                 createdAt = null
             ),
-            TaskItem(
+            TodoItem(
                 id = 2,
                 text = "Sell products",
                 importance = Importance.Low,
@@ -32,7 +32,7 @@ object FakeTaskListData {
                 isCompleted = true,
                 createdAt = null
             ),
-            TaskItem(
+            TodoItem(
                 id = 3,
                 text = "Visit Grandparents'",
                 importance = Importance.High,
@@ -40,7 +40,7 @@ object FakeTaskListData {
                 isCompleted = false,
                 createdAt = null
             ),
-            TaskItem(
+            TodoItem(
                 id = 4,
                 text = "Buy cosmetics",
                 importance = Importance.Low,
@@ -48,7 +48,7 @@ object FakeTaskListData {
                 isCompleted = true,
                 createdAt = null
             ),
-            TaskItem(
+            TodoItem(
                 id = 5,
                 text = "Drink",
                 importance = Importance.Low,
@@ -56,7 +56,7 @@ object FakeTaskListData {
                 isCompleted = false,
                 createdAt = null
             ),
-            TaskItem(
+            TodoItem(
                 id = 6,
                 text = "Buy groceries",
                 importance = Importance.High,
@@ -64,7 +64,7 @@ object FakeTaskListData {
                 isCompleted = false,
                 createdAt = null
             ),
-            TaskItem(
+            TodoItem(
                 id = 7,
                 text = "Buy groceries",
                 importance = Importance.Low,
@@ -72,7 +72,7 @@ object FakeTaskListData {
                 isCompleted = true,
                 createdAt = null
             ),
-            TaskItem(
+            TodoItem(
                 id = 8,
                 text = "Buy groceries",
                 importance = Importance.Initial,
@@ -80,7 +80,7 @@ object FakeTaskListData {
                 isCompleted = false,
                 createdAt = null
             ),
-            TaskItem(
+            TodoItem(
                 id = 9,
                 text = "Buy groceries",
                 importance = Importance.Initial,
@@ -88,7 +88,7 @@ object FakeTaskListData {
                 isCompleted = false,
                 createdAt = null
             ),
-            TaskItem(
+            TodoItem(
                 id = 10,
                 text = "Buy groceries",
                 importance = Importance.Initial,
@@ -96,7 +96,7 @@ object FakeTaskListData {
                 isCompleted = false,
                 createdAt = null
             ),
-            TaskItem(
+            TodoItem(
                 id = 11,
                 text = "Buy groceries",
                 importance = Importance.Initial,
@@ -104,7 +104,7 @@ object FakeTaskListData {
                 isCompleted = false,
                 createdAt = null
             ),
-            TaskItem(
+            TodoItem(
                 id = 12,
                 text = "Buy groceries",
                 importance = Importance.High,
@@ -112,7 +112,7 @@ object FakeTaskListData {
                 isCompleted = false,
                 createdAt = null
             ),
-            TaskItem(
+            TodoItem(
                 id = 13,
                 text = "Buy groceries",
                 importance = Importance.High,
@@ -120,7 +120,7 @@ object FakeTaskListData {
                 isCompleted = false,
                 createdAt = null
             ),
-            TaskItem(
+            TodoItem(
                 id = 14,
                 text = "Buy groceries",
                 importance = Importance.Initial,
@@ -128,7 +128,7 @@ object FakeTaskListData {
                 isCompleted = false,
                 createdAt = null
             ),
-            TaskItem(
+            TodoItem(
                 id = 15,
                 text = "Buy groceries",
                 importance = Importance.Initial,
@@ -136,7 +136,7 @@ object FakeTaskListData {
                 isCompleted = false,
                 createdAt = null
             ),
-            TaskItem(
+            TodoItem(
                 id = 16,
                 text = "Buy groceries",
                 importance = Importance.Initial,
@@ -144,7 +144,7 @@ object FakeTaskListData {
                 isCompleted = false,
                 createdAt = null
             ),
-            TaskItem(
+            TodoItem(
                 id = 17,
                 text = "Buy groceries",
                 importance = Importance.High,
@@ -154,8 +154,8 @@ object FakeTaskListData {
             ),
         )
 
-    fun generateTaskList(): List<TaskItem> {
-        val tasks = mutableListOf<TaskItem>()
+    fun generateTaskList(): List<TodoItem> {
+        val tasks = mutableListOf<TodoItem>()
         val now = Date()
         val calendar = Calendar.getInstance()
 
@@ -168,7 +168,7 @@ object FakeTaskListData {
             val deadline = calendar.time
 
             tasks.add(
-                TaskItem(
+                TodoItem(
                     id = i.toLong(),
                     text = "Task ${i + 1}",
                     importance = Importance.entries.toTypedArray().random(),

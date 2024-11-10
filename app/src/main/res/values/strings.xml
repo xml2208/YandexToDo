@@ -1,3 +1,18 @@
 <resources>
     <string name="app_name">YandexToDo</string>
+
+    <string name="my_works">Мои дела</string>
+    <string name="completed">Выполнено</string>
+    <string name="save">Сохранить</string>
+    <string name="to_do_title_hint">Что надо сделать…</string>
+    <string name="priority">Важность</string>
+    <string name="delete">Удалить</string>
+    <string name="deadline_text">Сделать до</string>
+    <string name="no_priority">Нет</string>
+    <string name="low">Низкий</string>
+    <string name="high">!!Высокий</string>
+    <string name="low_priority">низкая</string>
+    <string name="medium_priority">обычная</string>
+    <string name="high_priority">срочная</string>
+
 </resources>

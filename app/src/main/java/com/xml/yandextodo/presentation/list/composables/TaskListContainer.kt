@@ -28,36 +28,42 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.SwipeRefreshState
 import com.xml.yandextodo.R
-import com.xml.yandextodo.data.model.Importance
-import com.xml.yandextodo.data.model.TodoItem
+import com.xml.yandextodo.domain.model.Importance
+import com.xml.yandextodo.domain.model.TodoItemUiModel
 
 @Composable
 fun TaskListContainer(
     listState: LazyListState,
-    tasks: List<TodoItem>,
-    onCheckedChange: (TodoItem) -> Unit,
-    onEditTask: (Long) -> Unit,
+    swipeRefreshState: SwipeRefreshState,
+    tasks: List<TodoItemUiModel>,
+    onCheckedChange: (TodoItemUiModel) -> Unit,
+    onRefresh: () -> Unit,
+    onEditTask: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier.background(
-            color = MaterialTheme.colorScheme.onBackground,
-            shape = RoundedCornerShape(8.dp)
-        )
-    ) {
-        Spacer(Modifier.height(10.dp))
-        LazyColumn(state = listState) {
-            items(items = tasks) { task ->
-                TaskItemRow(
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                        .background(MaterialTheme.colorScheme.onBackground),
-                    todoItem = task,
-                    isChecked = task.isCompleted,
-                    onCheckedChange = { onCheckedChange(task) },
-                    onEditTask = { task.id?.let { it1 -> onEditTask(it1) } }
-                )
+    SwipeRefresh(state = swipeRefreshState, onRefresh = onRefresh) {
+        Column(
+            modifier = modifier.background(
+                color = MaterialTheme.colorScheme.onBackground,
+                shape = RoundedCornerShape(8.dp)
+            )
+        ) {
+            Spacer(Modifier.height(10.dp))
+            LazyColumn(state = listState) {
+                items(items = tasks) { task ->
+                    TaskItemRow(
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .background(MaterialTheme.colorScheme.onBackground),
+                        todoItemUiModel = task,
+                        isChecked = task.isCompleted,
+                        onCheckedChange = { onCheckedChange(task) },
+                        onEditTask = { onEditTask(task.id) }
+                    )
+                }
             }
         }
     }
@@ -65,10 +71,10 @@ fun TaskListContainer(
 
 @Composable
 private fun TaskItemRow(
-    todoItem: TodoItem,
+    todoItemUiModel: TodoItemUiModel,
     isChecked: Boolean,
-    onCheckedChange: (TodoItem) -> Unit,
-    onEditTask: (Long) -> Unit,
+    onCheckedChange: (TodoItemUiModel) -> Unit,
+    onEditTask: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -77,10 +83,10 @@ private fun TaskItemRow(
     ) {
         Checkbox(
             checked = isChecked,
-            onCheckedChange = { onCheckedChange(todoItem) },
+            onCheckedChange = { onCheckedChange(todoItemUiModel) },
             colors = CheckboxDefaults.colors(
                 checkedColor = MaterialTheme.colorScheme.inverseSurface,
-                uncheckedColor = if (todoItem.importance == Importance.High) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.inversePrimary,
+                uncheckedColor = if (todoItemUiModel.importance == Importance.IMPORTANT) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.inversePrimary,
                 checkmarkColor = MaterialTheme.colorScheme.background
             )
         )
@@ -89,19 +95,19 @@ private fun TaskItemRow(
             modifier = Modifier
                 .weight(1f)
                 .clickable {
-                    Log.d("xml22", "TaskItemRow: ${todoItem.id}")
-                    todoItem.id?.let { onEditTask(it) }
+                    Log.d("xml22", "TaskItemRow: ${todoItemUiModel.id}")
+                    onEditTask(todoItemUiModel.id)
                 },
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (todoItem.importance == Importance.High) {
+            if (todoItemUiModel.importance == Importance.IMPORTANT) {
                 Text(
                     text = "!!",
                     color = MaterialTheme.colorScheme.errorContainer,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.W400,
                 )
-            } else if (todoItem.importance == Importance.Low) {
+            } else if (todoItemUiModel.importance == Importance.LOW) {
                 Text(
                     text = "↓",
                     color = MaterialTheme.colorScheme.surfaceContainer,
@@ -109,7 +115,7 @@ private fun TaskItemRow(
                 )
             }
             Text(
-                text = todoItem.text,
+                text = todoItemUiModel.text,
                 color = if (isChecked) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
                 fontSize = 16.sp,
                 maxLines = 3,
@@ -132,10 +138,10 @@ private fun TaskItemRow(
 @Composable
 private fun TaskItemWithHighImportance() {
     TaskItemRow(
-        todoItem = TodoItem(
-            id = 0,
+        todoItemUiModel = TodoItemUiModel(
+            id = "0",
             text = "Go to the bank",
-            importance = Importance.High,
+            importance = Importance.IMPORTANT,
             deadline = null,
             isCompleted = true,
             createdAt = null
@@ -150,10 +156,10 @@ private fun TaskItemWithHighImportance() {
 @Composable
 private fun TaskItemWithLowImportance() {
     TaskItemRow(
-        todoItem = TodoItem(
-            id = 0,
+        todoItemUiModel = TodoItemUiModel(
+            id = "",
             text = "Go to the bank",
-            importance = Importance.Low,
+            importance = Importance.LOW,
             deadline = null,
             isCompleted = true,
             createdAt = null
@@ -168,10 +174,10 @@ private fun TaskItemWithLowImportance() {
 @Composable
 private fun UnCheckedTaskItem() {
     TaskItemRow(
-        todoItem = TodoItem(
-            id = 0,
+        todoItemUiModel = TodoItemUiModel(
+            id = "0",
             text = "Go to the bank",
-            importance = Importance.Low,
+            importance = Importance.LOW,
             deadline = null,
             isCompleted = false,
             createdAt = null

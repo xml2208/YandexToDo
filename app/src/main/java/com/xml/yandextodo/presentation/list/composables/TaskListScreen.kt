@@ -1,5 +1,6 @@
 package com.xml.yandextodo.presentation.list.composables
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -7,12 +8,16 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -20,11 +25,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.xml.yandextodo.R
+import com.xml.yandextodo.presentation.add.composables.LoadingContent
+import com.xml.yandextodo.presentation.list.view_model.TaskListContract
 import com.xml.yandextodo.presentation.list.view_model.TaskListViewModel
+import com.xml.yandextodo.presentation.main.TASK_ID_KEY
+import com.xml.yandextodo.presentation.main.isInternetAvailable
 import com.xml.yandextodo.presentation.screens.Screen
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun TaskListScreen(
     navController: NavHostController,
@@ -34,10 +46,11 @@ fun TaskListScreen(
 
     var isToolbarVisible by remember { mutableStateOf(true) }
     val listState = rememberLazyListState()
+    val snackBarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val refreshState = rememberSwipeRefreshState(isRefreshing = viewModel.viewState.value.loading)
 
-    val tasks by viewModel.tasks.collectAsState()
-
-    LaunchedEffect(listState.firstVisibleItemScrollOffset) {
+    LaunchedEffect(key1 = listState.firstVisibleItemScrollOffset) {
         isToolbarVisible = listState.firstVisibleItemScrollOffset == 0
     }
 
@@ -51,15 +64,16 @@ fun TaskListScreen(
                 ),
                 isToolbarVisible = isToolbarVisible,
                 showCompleted = false,
-                tasks = tasks,
+                tasks = viewModel.viewState.value.taskList,
                 onHideCompletedClicked = {},
                 onThemeUpdated = onThemeUpdated,
             )
         },
+        snackbarHost = { SnackbarHost(snackBarHostState) },
         floatingActionButton = {
             FloatingActionButton(
                 modifier = Modifier.padding(end = 12.dp, bottom = 40.dp),
-                onClick = { navController.navigate(Screen.AddTask.createRoute(-1)) },
+                onClick = { navController.navigate(Screen.TaskDetail.createRoute(TASK_ID_KEY)) },
                 shape = RoundedCornerShape(35.dp),
                 content = {
                     Icon(
@@ -70,17 +84,53 @@ fun TaskListScreen(
                 containerColor = MaterialTheme.colorScheme.surface,
             )
         }) { padding ->
-        TaskListContainer(
-            tasks = tasks,
-            listState = listState,
-            onCheckedChange = { viewModel.toggleTaskCompletion(it) },
-            onEditTask = { navController.navigate(Screen.AddTask.createRoute(taskId = it)) },
-            modifier = Modifier
-                .padding(padding)
-                .padding(8.dp)
-        )
+        when {
+            viewModel.viewState.value.loading -> {
+                LoadingContent(scaffoldPadding = padding)
+            }
+
+            !isInternetAvailable() -> {
+                scope.launch {
+                    snackBarHostState.showSnackbar(
+                        withDismissAction = true,
+                        message = "You are offline",
+                        actionLabel = "Retry",
+                        duration = SnackbarDuration.Indefinite
+                    ).also { result ->
+                        if (result == SnackbarResult.ActionPerformed) {
+                            viewModel.setEvent(TaskListContract.TaskListEvent.RefreshTodos)
+                        }
+                    }
+
+                }
+            }
+
+            else -> {
+                TaskListContainer(
+                    tasks = viewModel.viewState.value.taskList,
+                    listState = listState,
+                    onCheckedChange = {
+                        viewModel.setEvent(
+                            TaskListContract.TaskListEvent.OnCheckedChange(it)
+                        )
+                    },
+                    onEditTask = {
+                        viewModel.setEvent(TaskListContract.TaskListEvent.GetTask(id = it))
+                        navController.navigate(Screen.TaskDetail.createRoute(taskId = it))
+                    },
+                    onRefresh = { viewModel.setEvent(TaskListContract.TaskListEvent.RefreshTodos) },
+                    swipeRefreshState = refreshState,
+                    modifier = Modifier
+                        .padding(padding)
+                        .padding(8.dp)
+                )
+            }
+
+        }
+
     }
 }
+
 
 @Preview
 @Composable

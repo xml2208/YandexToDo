@@ -30,4 +30,7 @@ interface TaskDao {
     @Query("SELECT * FROM todo_database where id = :id")
     fun getTaskItem(id: Long?): TaskItemEntity?
 
+    @Query("DELETE FROM todo_database")
+    fun deleteAll()
+
 }

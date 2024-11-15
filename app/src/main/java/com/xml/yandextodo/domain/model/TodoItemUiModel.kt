@@ -2,6 +2,7 @@ package com.xml.yandextodo.domain.model
 
 import androidx.compose.ui.graphics.Color
 import java.util.Date
+import kotlin.random.Random
 
 data class TodoItemUiModel(
     val id: String,
@@ -15,7 +16,7 @@ data class TodoItemUiModel(
 ) {
     companion object {
         val initialTask = TodoItemUiModel(
-            id = "",
+            id = Random.nextInt().toString(),
             text = "",
             importance = Importance.BASIC,
             deadline = Date(),

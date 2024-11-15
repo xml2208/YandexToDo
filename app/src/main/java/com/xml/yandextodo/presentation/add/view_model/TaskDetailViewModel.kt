@@ -57,6 +57,8 @@ class TaskDetailViewModel(
         }
     }
 
+    private suspend fun getTask(id: String) = getTaskUseCase(id)
+
     private fun onTaskTitleChanged(newTitle: String) {
         setState { copy(taskItem = taskItem.copy(text = newTitle)) }
     }
@@ -74,7 +76,7 @@ class TaskDetailViewModel(
         val scope = CoroutineScope(Job())
         scope.launch(handler) {
             val currentTask = todoItemUiModel ?: return@launch
-            if (currentTask.id == "") {
+            if (getTask(currentTask.id) == null) {
                 addTaskUseCase(currentTask)
             } else {
                 updateTaskUseCase(currentTask)

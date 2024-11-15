@@ -51,7 +51,7 @@ class TaskDetailViewModel(
     private fun loadTask(id: String) {
         viewModelScope.launch(Dispatchers.IO) {
             setState { copy(loading = true) }
-            val task = getTaskUseCase.invoke(id)
+            val task = getTask(id)
             if (task != null) setState { copy(loading = false, taskItem = task) }
             setState { copy(loading = false)  }
         }

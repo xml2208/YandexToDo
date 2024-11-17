@@ -1,6 +1,7 @@
 package com.xml.yandextodo.data.repository
 
-import android.util.Log
+import android.content.Context
+import android.widget.Toast
 import com.xml.yandextodo.data.local.datasource.LocalDataSource
 import com.xml.yandextodo.data.mapper.toDto
 import com.xml.yandextodo.data.mapper.toUi
@@ -13,6 +14,7 @@ import com.xml.yandextodo.domain.repository.TodoRepository
 class ToDoRepositoryImpl(
     private val remoteDataSource: RemoteDataSource,
     private val localDataSource: LocalDataSource,
+    private val context: Context,
 ) : TodoRepository {
 
     private var lastKnownRevision = 0
@@ -34,6 +36,7 @@ class ToDoRepositoryImpl(
         try {
             remoteDataSource.addTask(lastKnownRevision, request)
         } catch (e: Exception) {
+            Toast.makeText(context, "Невозможно добавить задачу. Попробуйте еще раз.", Toast.LENGTH_LONG).show()
             e.printStackTrace()
         }
     }
@@ -46,13 +49,13 @@ class ToDoRepositoryImpl(
                 request = TaskRequest(todoItem = updatedTask.toDto())
             )
         } catch (e: Exception) {
+            Toast.makeText(context, "Невозможно обновить задачу. Попробуйте еще раз.", Toast.LENGTH_LONG).show()
             e.printStackTrace()
         }
     }
 
     override suspend fun getTaskById(id: String): TodoItemUiModel? =
         try {
-            Log.d("xml", "getTaskById: ${remoteDataSource.getTask(id).element}")
             remoteDataSource.getTask(id).element.toUi()
         } catch (e: Exception) {
             e.printStackTrace()

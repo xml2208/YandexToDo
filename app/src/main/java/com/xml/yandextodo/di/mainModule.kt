@@ -1,5 +1,8 @@
 package com.xml.yandextodo.di
 
+import android.app.Application
+import android.content.Context
+import android.net.ConnectivityManager
 import androidx.room.Room
 import com.xml.yandextodo.data.local.TaskDao
 import com.xml.yandextodo.data.local.TaskDatabase
@@ -11,6 +14,7 @@ import com.xml.yandextodo.data.remote.datasource.RemoteDataSource
 import com.xml.yandextodo.domain.repository.TodoRepository
 import com.xml.yandextodo.data.repository.ToDoRepositoryImpl
 import com.xml.yandextodo.domain.usecases.AddTaskUseCase
+import com.xml.yandextodo.domain.usecases.CheckInternetConnectivityUseCase
 import com.xml.yandextodo.domain.usecases.DeleteTaskUseCase
 import com.xml.yandextodo.domain.usecases.GetTaskListUseCase
 import com.xml.yandextodo.domain.usecases.GetTaskUseCase
@@ -38,21 +42,28 @@ val mainModule = module {
         ToDoRepositoryImpl(
             remoteDataSource = get<RemoteDataSource>(),
             localDataSource = get<LocalDataSource>(),
+            context = get()
         )
     }
-    single { DeleteTaskUseCase(repository = get<TodoRepository>()) }
-    single { UpdateTaskUseCase(repository = get<TodoRepository>()) }
-    single { AddTaskUseCase(repository = get<TodoRepository>()) }
-    single { GetTaskListUseCase(repository = get<TodoRepository>()) }
-    single { GetTaskUseCase(repository = get<TodoRepository>()) }
+    single { get<Application>().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager }
+    factory { DeleteTaskUseCase(repository = get<TodoRepository>()) }
+    factory { UpdateTaskUseCase(repository = get<TodoRepository>()) }
+    factory { AddTaskUseCase(repository = get<TodoRepository>()) }
+    factory { GetTaskListUseCase(repository = get<TodoRepository>()) }
+    factory { GetTaskUseCase(repository = get<TodoRepository>()) }
 
-    viewModel { TaskDetailViewModel( get(), get(), get(), get()) }
+    single { CheckInternetConnectivityUseCase(connectivityManager = get<ConnectivityManager>()) }
 
-    viewModel { TaskListViewModel(
-        taskListUseCase = get<GetTaskListUseCase>(),
-        updateTaskUseCase = get<UpdateTaskUseCase>(),
-        getTaskUseCase = get<GetTaskUseCase>()
-    ) }
+    viewModel { TaskDetailViewModel(get(), get(), get(), get()) }
+
+    viewModel {
+        TaskListViewModel(
+            taskListUseCase = get<GetTaskListUseCase>(),
+            updateTaskUseCase = get<UpdateTaskUseCase>(),
+            getTaskUseCase = get<GetTaskUseCase>(),
+            checkInternetConnectivityUseCase = get<CheckInternetConnectivityUseCase>()
+        )
+    }
 
     single { provideOkhttp() }
 

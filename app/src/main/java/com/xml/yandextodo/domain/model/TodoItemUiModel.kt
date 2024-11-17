@@ -10,7 +10,7 @@ data class TodoItemUiModel(
     val importance: Importance,
     val deadline: Date?,
     val isCompleted: Boolean,
-    val createdAt: Date?,
+    val createdAt: Date? = null,
     val changed_at: Date? = null,
     val last_updated_by: String = "",
 ) {

@@ -9,9 +9,8 @@ import com.xml.yandextodo.domain.usecases.GetTaskUseCase
 import com.xml.yandextodo.domain.usecases.UpdateTaskUseCase
 import com.xml.yandextodo.presentation.base.BaseViewModel
 import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -73,8 +72,8 @@ class TaskDetailViewModel(
 
 
     private fun saveTask(todoItemUiModel: TodoItemUiModel?) {
-        val scope = CoroutineScope(Job())
-        scope.launch(handler) {
+        viewModelScope.launch(handler) {
+            if (!isActive) return@launch
             val currentTask = todoItemUiModel ?: return@launch
             if (getTask(currentTask.id) == null) {
                 addTaskUseCase(currentTask)

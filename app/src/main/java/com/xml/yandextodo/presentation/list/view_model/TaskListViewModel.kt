@@ -2,18 +2,29 @@ package com.xml.yandextodo.presentation.list.view_model
 
 import androidx.lifecycle.viewModelScope
 import com.xml.yandextodo.domain.model.TodoItemUiModel
+import com.xml.yandextodo.domain.usecases.CheckInternetConnectivityUseCase
 import com.xml.yandextodo.domain.usecases.GetTaskListUseCase
 import com.xml.yandextodo.domain.usecases.GetTaskUseCase
 import com.xml.yandextodo.domain.usecases.UpdateTaskUseCase
 import com.xml.yandextodo.presentation.base.BaseViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class TaskListViewModel(
     private val taskListUseCase: GetTaskListUseCase,
     private val updateTaskUseCase: UpdateTaskUseCase,
     private val getTaskUseCase: GetTaskUseCase,
+    checkInternetConnectivityUseCase: CheckInternetConnectivityUseCase
 ) : BaseViewModel<TaskListContract.State, TaskListContract.TaskListEvent>() {
+
+    val internetAvailable = checkInternetConnectivityUseCase.observe()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
 
     init {
         refreshTodos()

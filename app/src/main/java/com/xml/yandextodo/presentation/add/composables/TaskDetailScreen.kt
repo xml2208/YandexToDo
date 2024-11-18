@@ -1,5 +1,6 @@
 package com.xml.yandextodo.presentation.add.composables
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,91 +20,118 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.xml.yandextodo.R
-import com.xml.yandextodo.data.model.Importance
-import com.xml.yandextodo.presentation.add.view_model.AddTaskViewModel
+import com.xml.yandextodo.domain.model.Importance
+import com.xml.yandextodo.presentation.add.view_model.TaskDetailContract
+import com.xml.yandextodo.presentation.add.view_model.TaskDetailViewModel
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun AddTaskScreen(
+fun TaskDetailScreen(
     navController: NavHostController,
-    taskId: Long,
-    viewModel: AddTaskViewModel = koinViewModel(),
+    taskId: String,
+    viewModel: TaskDetailViewModel = koinViewModel(),
 ) {
-    val taskItemState = viewModel.task.collectAsState().value
+    val context = LocalContext.current
+    val viewState = viewModel.viewState.value
 
-    LaunchedEffect(taskId) { viewModel.loadTask(taskId) }
+    LaunchedEffect(key1 = taskId, key2 = viewState.error) {
+        if (taskId.isNotEmpty()) viewModel.setEvent(TaskDetailContract.TaskDetailEvent.OnLoad(taskId))
+        if (viewState.error != null) {
+            Toast.makeText(context, "${viewState.error}", Toast.LENGTH_LONG).show()
+        }
+    }
 
     Column(
         modifier = Modifier
             .background(MaterialTheme.colorScheme.background)
             .fillMaxSize()
     ) {
-        AddTaskTopBar(
-            onExit = { navController.navigateUp() },
-            onSave = {
-                viewModel.saveTask(taskItemState)
-                navController.popBackStack()
-            },
-            modifier = Modifier.padding(16.dp)
-        )
+        if (viewState.loading) {
+            LoadingContent(modifier = Modifier.padding(top = 24.dp))
+        } else {
+            AddTaskTopBar(
+                onExit = { navController.navigateUp() },
+                onSave = {
+                    if (viewState.taskItem.text.isNotBlank()) {
+                        viewModel.setEvent(TaskDetailContract.TaskDetailEvent.OnSave(tasItemUiModel = viewState.taskItem))
+                        navController.popBackStack()
+                    } else {
+                        Toast.makeText(context, "Имя задачи пустое, пожалуйста, добавьте", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                modifier = Modifier.padding(16.dp)
+            )
 
-        TaskTitleTextField(
-            modifier = Modifier
-                .padding(top = 8.dp, bottom = 28.dp, start = 16.dp, end = 16.dp)
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.onBackground),
-            taskTitle = taskItemState.text,
-            onValueChange = viewModel::onTaskTitleChanged
-        )
+            TaskTitleTextField(
+                modifier = Modifier
+                    .padding(top = 8.dp, bottom = 28.dp, start = 16.dp, end = 16.dp)
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.onBackground),
+                taskTitle = viewState.taskItem.text,
+                onValueChange = {
+                    viewModel.setEvent(TaskDetailContract.TaskDetailEvent.OnTitleValueChanged(it))
+                }
+            )
 
-        Text(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            text = stringResource(R.string.priority),
-            fontSize = 16.sp,
-            fontWeight = FontWeight.W400,
-            color = MaterialTheme.colorScheme.primary,
-        )
+            Text(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .fillMaxWidth(),
+                text = stringResource(R.string.priority),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.W400,
+                textAlign = TextAlign.Start,
+                color = MaterialTheme.colorScheme.primary,
+            )
 
-        PriorityDropdownMenu(
-            selectedText = taskItemState.importance,
-            onPrioritySelected = { importance -> viewModel.togglePriority(importance) },
-            modifier = Modifier.padding(top = 4.dp, start = 16.dp, bottom = 16.dp)
-        )
+            PriorityDropdownMenu(
+                selectedText = viewState.taskItem.importance,
+                onPrioritySelected = { importance -> viewModel.togglePriority(importance) },
+                modifier = Modifier.padding(top = 4.dp, start = 16.dp, bottom = 16.dp)
+            )
 
-        HorizontalDivider()
+            HorizontalDivider()
 
-        DatePickerComponent(
-            selectedDate = viewModel.formatDate(taskItemState.deadline).orEmpty(),
-            saveDate = viewModel::onDeadlineChange,
-            modifier = Modifier.padding(16.dp))
+            DatePickerComponent(
+                selectedDate = viewModel.formatDate(viewState.taskItem.deadline)
+                    .orEmpty(),
+                saveDate = {
+                    viewModel.setEvent(
+                        TaskDetailContract.TaskDetailEvent.OnDeadlineChanged(it)
+                    )
+                },
+                modifier = Modifier.padding(16.dp)
+            )
 
-        Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(24.dp))
 
-        HorizontalDivider()
+            HorizontalDivider()
 
-        DeleteTaskRow(
-            modifier = Modifier.padding(vertical = 20.dp, horizontal = 16.dp),
-            deleteTask = {
-                navController.popBackStack()
-                viewModel.deleteTask(taskId)
-            },
-            isTextFieldEmpty = taskItemState.text.isEmpty(),
-        )
+            DeleteTaskRow(
+                modifier = Modifier.padding(vertical = 20.dp, horizontal = 16.dp),
+                deleteTask = {
+                    navController.popBackStack()
+                    viewModel.setEvent(TaskDetailContract.TaskDetailEvent.DeleteTask(taskId))
+                },
+                isTextFieldEmpty = viewState.taskItem.text.isEmpty(),
+            )
+        }
     }
 }
 
@@ -151,7 +179,7 @@ private fun PriorityDropdownMenu(
                                 highColor = MaterialTheme.colorScheme.errorContainer
                             ),
                             fontSize = 16.sp,
-                            fontWeight = if (option == Importance.High) FontWeight.Bold else FontWeight.Normal
+                            fontWeight = if (option == Importance.IMPORTANT) FontWeight.Bold else FontWeight.Normal
                         )
                     },
                     onClick = {
@@ -165,13 +193,15 @@ private fun PriorityDropdownMenu(
 }
 
 @Composable
-fun DeleteTaskRow(
+private fun DeleteTaskRow(
     deleteTask: () -> Unit,
     isTextFieldEmpty: Boolean,
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier.clickable { deleteTask() },
+        modifier = modifier
+            .clickable { deleteTask() }
+            .fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Icon(
@@ -193,12 +223,12 @@ fun DeleteTaskRow(
 @Preview
 @Composable
 private fun AddTaskScreenPreview() {
-    AddTaskScreen(navController = rememberNavController(), 0L)
+    TaskDetailScreen(navController = rememberNavController(), "")
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun DeleteTaskRow() {
+private fun DeleteTaskRowPreview() {
     DeleteTaskRow(
         deleteTask = {},
         isTextFieldEmpty = true,

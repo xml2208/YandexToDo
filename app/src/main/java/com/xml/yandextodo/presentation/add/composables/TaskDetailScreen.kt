@@ -48,8 +48,13 @@ fun TaskDetailScreen(
     viewModel: TaskDetailViewModel = koinViewModel(),
 ) {
     val context = LocalContext.current
-    LaunchedEffect(taskId) {
-        viewModel.setEvent(TaskDetailContract.TaskDetailEvent.OnLoad(taskId))
+    val viewState = viewModel.viewState.value
+
+    LaunchedEffect(key1 = taskId, key2 = viewState.error) {
+        if (taskId.isNotEmpty()) viewModel.setEvent(TaskDetailContract.TaskDetailEvent.OnLoad(taskId))
+        if (viewState.error != null) {
+            Toast.makeText(context, "${viewState.error}", Toast.LENGTH_LONG).show()
+        }
     }
 
     Column(
@@ -57,14 +62,14 @@ fun TaskDetailScreen(
             .background(MaterialTheme.colorScheme.background)
             .fillMaxSize()
     ) {
-        if (viewModel.viewState.value.loading) {
+        if (viewState.loading) {
             LoadingContent(modifier = Modifier.padding(top = 24.dp))
         } else {
             AddTaskTopBar(
                 onExit = { navController.navigateUp() },
                 onSave = {
-                    if (viewModel.viewState.value.taskItem.text.isNotBlank()) {
-                        viewModel.setEvent(TaskDetailContract.TaskDetailEvent.OnSave(tasItemUiModel = viewModel.viewState.value.taskItem))
+                    if (viewState.taskItem.text.isNotBlank()) {
+                        viewModel.setEvent(TaskDetailContract.TaskDetailEvent.OnSave(tasItemUiModel = viewState.taskItem))
                         navController.popBackStack()
                     } else {
                         Toast.makeText(context, "Имя задачи пустое, пожалуйста, добавьте", Toast.LENGTH_SHORT).show()
@@ -78,7 +83,7 @@ fun TaskDetailScreen(
                     .padding(top = 8.dp, bottom = 28.dp, start = 16.dp, end = 16.dp)
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.onBackground),
-                taskTitle = viewModel.viewState.value.taskItem.text,
+                taskTitle = viewState.taskItem.text,
                 onValueChange = {
                     viewModel.setEvent(TaskDetailContract.TaskDetailEvent.OnTitleValueChanged(it))
                 }
@@ -96,7 +101,7 @@ fun TaskDetailScreen(
             )
 
             PriorityDropdownMenu(
-                selectedText = viewModel.viewState.value.taskItem.importance,
+                selectedText = viewState.taskItem.importance,
                 onPrioritySelected = { importance -> viewModel.togglePriority(importance) },
                 modifier = Modifier.padding(top = 4.dp, start = 16.dp, bottom = 16.dp)
             )
@@ -104,7 +109,7 @@ fun TaskDetailScreen(
             HorizontalDivider()
 
             DatePickerComponent(
-                selectedDate = viewModel.formatDate(viewModel.viewState.value.taskItem.deadline)
+                selectedDate = viewModel.formatDate(viewState.taskItem.deadline)
                     .orEmpty(),
                 saveDate = {
                     viewModel.setEvent(
@@ -124,7 +129,7 @@ fun TaskDetailScreen(
                     navController.popBackStack()
                     viewModel.setEvent(TaskDetailContract.TaskDetailEvent.DeleteTask(taskId))
                 },
-                isTextFieldEmpty = viewModel.viewState.value.taskItem.text.isEmpty(),
+                isTextFieldEmpty = viewState.taskItem.text.isEmpty(),
             )
         }
     }

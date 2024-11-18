@@ -65,7 +65,15 @@ class TaskListViewModel(
     }
 
     private fun getTask(id: String?) {
-        if (id != null) viewModelScope.launch { getTaskUseCase(id) }
+        if (id != null) {
+            viewModelScope.launch {
+                try {
+                    getTaskUseCase(id)
+                } catch (e: Exception) {
+                    setState { copy(error = "EXCEPTION: ${e.message}") }
+                }
+            }
+        }
     }
 
 

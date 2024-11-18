@@ -1,5 +1,6 @@
 package com.xml.yandextodo.domain.usecases
 
+import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
@@ -9,9 +10,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 
-class CheckInternetConnectivityUseCase(
-    private val connectivityManager: ConnectivityManager
-) {
+class CheckInternetConnectivityUseCase(context: Context) {
+    private val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
     operator fun invoke(): Boolean {
         return connectivityManager.activeNetwork?.let { network ->
             connectivityManager.getNetworkCapabilities(network)?.let { capabilities ->

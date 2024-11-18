@@ -1,8 +1,5 @@
 package com.xml.yandextodo.di
 
-import android.app.Application
-import android.content.Context
-import android.net.ConnectivityManager
 import androidx.room.Room
 import com.xml.yandextodo.data.local.TaskDao
 import com.xml.yandextodo.data.local.TaskDatabase
@@ -28,6 +25,8 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
+const val TIME_OUT = 30L
+
 val mainModule = module {
 
     single {
@@ -42,17 +41,15 @@ val mainModule = module {
         ToDoRepositoryImpl(
             remoteDataSource = get<RemoteDataSource>(),
             localDataSource = get<LocalDataSource>(),
-            context = get()
         )
     }
-    single { get<Application>().getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager }
     factory { DeleteTaskUseCase(repository = get<TodoRepository>()) }
     factory { UpdateTaskUseCase(repository = get<TodoRepository>()) }
     factory { AddTaskUseCase(repository = get<TodoRepository>()) }
     factory { GetTaskListUseCase(repository = get<TodoRepository>()) }
     factory { GetTaskUseCase(repository = get<TodoRepository>()) }
 
-    single { CheckInternetConnectivityUseCase(connectivityManager = get<ConnectivityManager>()) }
+    single { CheckInternetConnectivityUseCase(context = get()) }
 
     viewModel { TaskDetailViewModel(get(), get(), get(), get()) }
 
@@ -81,9 +78,9 @@ private fun provideOkhttp(): OkHttpClient {
     return OkHttpClient.Builder()
         .addInterceptor(loggingInterceptor)
         .authenticator(AuthInterceptor())
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(TIME_OUT, TimeUnit.SECONDS)
+        .readTimeout(TIME_OUT, TimeUnit.SECONDS)
+        .writeTimeout(TIME_OUT, TimeUnit.SECONDS)
         .build()
 }
 

@@ -1,5 +1,6 @@
 package com.xml.yandextodo.presentation.add.view_model
 
+import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.xml.yandextodo.domain.model.Importance
 import com.xml.yandextodo.domain.model.TodoItemUiModel
@@ -24,7 +25,7 @@ class TaskDetailViewModel(
 ) : BaseViewModel<TaskDetailContract.State, TaskDetailContract.TaskDetailEvent>() {
 
     private val handler = CoroutineExceptionHandler { _, exception ->
-        println("Caught $exception")
+        Log.d("xml22", "Caught $exception")
     }
 
     override fun setInitialState(): TaskDetailContract.State {
@@ -52,7 +53,7 @@ class TaskDetailViewModel(
             setState { copy(loading = true) }
             val task = getTask(id)
             if (task != null) setState { copy(loading = false, taskItem = task) }
-            setState { copy(loading = false)  }
+            setState { copy(loading = false) }
         }
     }
 
@@ -72,14 +73,19 @@ class TaskDetailViewModel(
 
 
     private fun saveTask(todoItemUiModel: TodoItemUiModel?) {
+        val currentTask = todoItemUiModel ?: return
         viewModelScope.launch(handler) {
-            if (!isActive) return@launch
-            val currentTask = todoItemUiModel ?: return@launch
-            if (getTask(currentTask.id) == null) {
-                addTaskUseCase(currentTask)
-            } else {
-                updateTaskUseCase(currentTask)
+//            if (!isActive) return@launch
+            try {
+                if (getTask(currentTask.id) == null) {
+                    addTaskUseCase(currentTask)
+                } else {
+                    updateTaskUseCase(currentTask)
+                }
+            } catch (e: Exception) {
+                setState { copy(error = "Невозможно добавить задачу. ${e.message}") }
             }
+
         }
     }
 
@@ -87,6 +93,8 @@ class TaskDetailViewModel(
         viewModelScope.launch(handler) {
             if (taskId != null) {
                 deleteTaskUseCase(taskId)
+            } else {
+                setState { copy(error = "Невозможно удалить задачу") }
             }
         }
     }

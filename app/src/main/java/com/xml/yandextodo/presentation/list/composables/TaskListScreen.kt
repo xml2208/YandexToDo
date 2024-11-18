@@ -1,6 +1,7 @@
 package com.xml.yandextodo.presentation.list.composables
 
 import android.annotation.SuppressLint
+import android.widget.Toast
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -44,15 +46,20 @@ fun TaskListScreen(
     viewModel: TaskListViewModel = koinViewModel(),
 ) {
     val isInternetAvailable by viewModel.internetAvailable.collectAsStateWithLifecycle()
+    val viewState = viewModel.viewState.value
     val listState = rememberLazyListState()
     val isToolbarVisible by remember { derivedStateOf { listState.firstVisibleItemScrollOffset == 0 } }
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val refreshState = rememberSwipeRefreshState(isRefreshing = viewModel.viewState.value.loading)
+    val refreshState = rememberSwipeRefreshState(isRefreshing = viewState.loading)
     val navBackStackEntry = navController.currentBackStackEntryAsState()
+    val context = LocalContext.current
 
     LaunchedEffect(key1 = navBackStackEntry.value) {
-        viewModel.setEvent(TaskListContract.TaskListEvent.RefreshTodos)
+        val currentRoute = navController.currentBackStackEntry?.destination?.route
+        if (currentRoute == Screen.ToDoList.route) {
+            viewModel.setEvent(TaskListContract.TaskListEvent.RefreshTodos)
+        }
     }
 
     Scaffold(
@@ -65,7 +72,7 @@ fun TaskListScreen(
                 ),
                 isToolbarVisible = isToolbarVisible,
                 showCompleted = false,
-                tasks = viewModel.viewState.value.taskList,
+                tasks = viewState.taskList,
                 onHideCompletedClicked = {},
                 onThemeUpdated = onThemeUpdated,
             )
@@ -73,7 +80,7 @@ fun TaskListScreen(
         snackbarHost = { SnackbarHost(snackBarHostState) },
         floatingActionButton = { AddButton(navController) }) { padding ->
         when {
-            viewModel.viewState.value.loading -> {
+            viewState.loading -> {
                 LoadingContent(scaffoldPadding = padding)
             }
 
@@ -92,9 +99,9 @@ fun TaskListScreen(
                 }
             }
 
-            else -> {
+            viewState.error == null -> {
                 TaskListContainer(
-                    tasks = viewModel.viewState.value.taskList,
+                    tasks = viewState.taskList,
                     listState = listState,
                     onCheckedChange = {
                         viewModel.setEvent(
@@ -112,6 +119,8 @@ fun TaskListScreen(
                         .padding(8.dp)
                 )
             }
+
+            else -> Toast.makeText(context, viewState.error, Toast.LENGTH_LONG).show()
 
         }
 

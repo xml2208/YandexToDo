@@ -9,6 +9,7 @@ import com.xml.yandextodo.data.model.TaskRequest
 import com.xml.yandextodo.domain.model.TodoItemUiModel
 import com.xml.yandextodo.data.remote.datasource.RemoteDataSource
 import com.xml.yandextodo.domain.repository.TodoRepository
+import kotlinx.coroutines.CoroutineExceptionHandler
 
 class ToDoRepositoryImpl(
     private val remoteDataSource: RemoteDataSource,
@@ -16,6 +17,8 @@ class ToDoRepositoryImpl(
 ) : TodoRepository {
 
     private var lastKnownRevision = 0
+    private val handler =
+        CoroutineExceptionHandler { _, exception -> Log.d("xml22", "Caught $exception") }
 
     override suspend fun getAllTasks(): List<TodoItemUiModel> =
         try {
@@ -23,7 +26,6 @@ class ToDoRepositoryImpl(
             lastKnownRevision = response.revision
             Log.d("TAG", "getAllTasks: ${response.list.toUiList()}")
             response.list.toUiList()
-//            localDataSource.getTaskList().map { it.toUi() }
         } catch (e: Exception) {
             e.printStackTrace()
             emptyList()

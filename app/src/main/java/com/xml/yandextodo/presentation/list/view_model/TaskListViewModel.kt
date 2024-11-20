@@ -1,59 +1,63 @@
 package com.xml.yandextodo.presentation.list.view_model
 
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.xml.yandextodo.domain.model.TodoItemUiModel
-import com.xml.yandextodo.domain.usecases.CheckInternetConnectivityUseCase
+import com.xml.yandextodo.domain.usecases.CheckInternetConnectivityRepository
 import com.xml.yandextodo.domain.usecases.GetTaskListUseCase
 import com.xml.yandextodo.domain.usecases.GetTaskUseCase
 import com.xml.yandextodo.domain.usecases.UpdateTaskUseCase
-import com.xml.yandextodo.presentation.base.BaseViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class TaskListViewModel(
     private val taskListUseCase: GetTaskListUseCase,
     private val updateTaskUseCase: UpdateTaskUseCase,
     private val getTaskUseCase: GetTaskUseCase,
-    checkInternetConnectivityUseCase: CheckInternetConnectivityUseCase
-) : BaseViewModel<TaskListContract.State, TaskListContract.TaskListEvent>() {
+    checkInternetConnectivityUseCase: CheckInternetConnectivityRepository
+) : ViewModel() {
 
-    val internetAvailable = checkInternetConnectivityUseCase.observe()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = false
-        )
+    private val _viewState = MutableStateFlow<TaskListState>(TaskListState.Loading)
+    val viewState get() = _viewState.asStateFlow()
+
+    private val _events = MutableSharedFlow<TaskListEvent>()
+
+    val internetAvailable = checkInternetConnectivityUseCase.observeConnectivity()
 
     init {
         refreshTodos()
     }
 
-    override fun setInitialState(): TaskListContract.State {
-        return TaskListContract.State(loading = true, taskList = emptyList(), error = null)
+    fun subscribeToEvents() {
+        viewModelScope.launch {
+            _events.collectLatest { event ->
+                when (event) {
+                    is TaskListEvent.RefreshTodos -> refreshTodos()
+                    is TaskListEvent.GetTask -> getTask(event.id)
+                    is TaskListEvent.OnCheckedChange -> toggleTaskCompletion(event.todo)
+                }
+            }
+        }
     }
 
-    override fun handleEvents(event: TaskListContract.TaskListEvent) {
-        when (event) {
-            is TaskListContract.TaskListEvent.RefreshTodos -> {
-                viewModelScope.launch(Dispatchers.IO) { refreshTodos() }
-            }
-
-            is TaskListContract.TaskListEvent.GetTask -> getTask(event.id)
-            is TaskListContract.TaskListEvent.OnCheckedChange -> toggleTaskCompletion(event.todo)
+    fun setEvent(event: TaskListEvent) {
+        viewModelScope.launch {
+            _events.emit(event)
         }
     }
 
     private fun refreshTodos() {
-        setState { copy(loading = true) }
+        _viewState.value = TaskListState.Loading
         try {
             viewModelScope.launch {
-                val list = taskListUseCase()
-                setState { copy(loading = false, taskList = list) }
+                _viewState.value = TaskListState.Content(taskList = taskListUseCase())
             }
         } catch (e: Exception) {
-            setState { copy(loading = false, error = e.message) }
+            _viewState.value = TaskListState.Error(error = "Can not refresh: ${e.message}")
         }
     }
 
@@ -70,16 +74,9 @@ class TaskListViewModel(
                 try {
                     getTaskUseCase(id)
                 } catch (e: Exception) {
-                    setState { copy(error = "EXCEPTION: ${e.message}") }
+                    TaskListState.Error(error = "EXCEPTION: ${e.message}")
                 }
             }
         }
     }
-
-
-    /*    refreshing taskList from local
-                refreshTaskUseCase()
-                    .catch { exception -> setState { copy(error = "Error ${exception.message}") } }
-                    .collectLatest { list -> setState { copy(loading = false, taskList = list) } }
-    * */
 }

@@ -1,22 +1,19 @@
 package com.xml.yandextodo.presentation.list.view_model
 
 import com.xml.yandextodo.domain.model.TodoItemUiModel
-import com.xml.yandextodo.presentation.base.CoreEvent
-import com.xml.yandextodo.presentation.base.CoreState
 
-class TaskListContract  {
+sealed class TaskListEvent {
+    data object RefreshTodos : TaskListEvent()
+    data class GetTask(val id: String?) : TaskListEvent()
+    data class OnCheckedChange(val todo: TodoItemUiModel) : TaskListEvent()
+}
 
-    sealed class TaskListEvent : CoreEvent {
+sealed class TaskListState {
 
-        data object RefreshTodos : TaskListEvent()
-        data class GetTask(val id: String?) : TaskListEvent()
-        data class OnCheckedChange(val todo: TodoItemUiModel) : TaskListEvent()
+    data object Loading : TaskListState()
 
-    }
+    data class Content(val taskList: List<TodoItemUiModel>) : TaskListState()
 
-    data class State(
-        val loading: Boolean,
-        val taskList: List<TodoItemUiModel>,
-        val error: String?,
-    ): CoreState
+    data class Error(val error: String?) : TaskListState()
+
 }

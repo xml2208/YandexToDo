@@ -11,7 +11,7 @@ import com.xml.yandextodo.data.remote.datasource.RemoteDataSource
 import com.xml.yandextodo.domain.repository.TodoRepository
 import com.xml.yandextodo.data.repository.ToDoRepositoryImpl
 import com.xml.yandextodo.domain.usecases.AddTaskUseCase
-import com.xml.yandextodo.domain.usecases.CheckInternetConnectivityUseCase
+import com.xml.yandextodo.domain.usecases.CheckInternetConnectivityRepository
 import com.xml.yandextodo.domain.usecases.DeleteTaskUseCase
 import com.xml.yandextodo.domain.usecases.GetTaskListUseCase
 import com.xml.yandextodo.domain.usecases.GetTaskUseCase
@@ -49,7 +49,7 @@ val mainModule = module {
     factory { GetTaskListUseCase(repository = get<TodoRepository>()) }
     factory { GetTaskUseCase(repository = get<TodoRepository>()) }
 
-    single { CheckInternetConnectivityUseCase(context = get()) }
+    factory { CheckInternetConnectivityRepository(context = get()) }
 
     viewModel { TaskDetailViewModel(get(), get(), get(), get()) }
 
@@ -58,7 +58,7 @@ val mainModule = module {
             taskListUseCase = get<GetTaskListUseCase>(),
             updateTaskUseCase = get<UpdateTaskUseCase>(),
             getTaskUseCase = get<GetTaskUseCase>(),
-            checkInternetConnectivityUseCase = get<CheckInternetConnectivityUseCase>()
+            checkInternetConnectivityUseCase = get<CheckInternetConnectivityRepository>()
         )
     }
 

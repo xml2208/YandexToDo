@@ -1,6 +1,6 @@
 package com.xml.yandextodo.presentation.add.view_model
 
-import android.util.Log
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xml.yandextodo.domain.model.Importance
 import com.xml.yandextodo.domain.model.TodoItemUiModel
@@ -8,10 +8,9 @@ import com.xml.yandextodo.domain.usecases.AddTaskUseCase
 import com.xml.yandextodo.domain.usecases.DeleteTaskUseCase
 import com.xml.yandextodo.domain.usecases.GetTaskUseCase
 import com.xml.yandextodo.domain.usecases.UpdateTaskUseCase
-import com.xml.yandextodo.presentation.base.BaseViewModel
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -22,60 +21,60 @@ class TaskDetailViewModel(
     private val updateTaskUseCase: UpdateTaskUseCase,
     private val addTaskUseCase: AddTaskUseCase,
     private val deleteTaskUseCase: DeleteTaskUseCase,
-) : BaseViewModel<TaskDetailContract.State, TaskDetailContract.TaskDetailEvent>() {
+) : ViewModel() {
 
-    private val handler = CoroutineExceptionHandler { _, exception ->
-        Log.d("xml22", "Caught $exception")
-    }
+    private val _viewState = MutableStateFlow<TaskDetailState>(TaskDetailState.Loading)
+    val viewState get() = _viewState.asStateFlow()
 
-    override fun setInitialState(): TaskDetailContract.State {
-        return TaskDetailContract.State(
-            loading = false,
-            taskItem = TodoItemUiModel.initialTask,
-            error = null
-        )
-    }
+    private val _events = MutableSharedFlow<TaskDetailEvent>()
 
-    override fun handleEvents(event: TaskDetailContract.TaskDetailEvent) {
-
-        when (event) {
-            is TaskDetailContract.TaskDetailEvent.OnLoad -> loadTask(event.id)
-            is TaskDetailContract.TaskDetailEvent.OnSave -> saveTask(event.tasItemUiModel)
-            is TaskDetailContract.TaskDetailEvent.OnTitleValueChanged -> onTaskTitleChanged(event.text)
-            is TaskDetailContract.TaskDetailEvent.OnImportanceToggleChanged -> togglePriority(event.importance)
-            is TaskDetailContract.TaskDetailEvent.OnDeadlineChanged -> onDeadlineChange(event.deadline)
-            is TaskDetailContract.TaskDetailEvent.DeleteTask -> deleteTask(event.id)
+    fun subscribeToEvents() {
+        viewModelScope.launch {
+            _events.collect { event ->
+                when (event) {
+                    is TaskDetailEvent.OnLoad -> loadTask(event.id)
+                    is TaskDetailEvent.OnSave -> saveTask(event.tasItemUiModel)
+                    is TaskDetailEvent.OnTitleValueChanged -> onTaskTitleChanged(event.text)
+                    is TaskDetailEvent.OnImportanceToggleChanged -> togglePriority(event.importance)
+                    is TaskDetailEvent.OnDeadlineChanged -> onDeadlineChange(event.deadline)
+                    is TaskDetailEvent.DeleteTask -> deleteTask(event.id)
+                    is TaskDetailEvent.OnError -> setError(event.message)
+                }
+            }
         }
     }
 
-    private fun loadTask(id: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            setState { copy(loading = true) }
-            val task = getTask(id)
-            if (task != null) setState { copy(loading = false, taskItem = task) }
-            setState { copy(loading = false) }
-        }
+    fun setEvent(event: TaskDetailEvent) {
+        viewModelScope.launch { _events.emit(event) }
     }
 
     private suspend fun getTask(id: String) = getTaskUseCase(id)
 
-    private fun onTaskTitleChanged(newTitle: String) {
-        setState { copy(taskItem = taskItem.copy(text = newTitle)) }
+    private fun loadTask(id: String) {
+        viewModelScope.launch {
+            try {
+                _viewState.value = TaskDetailState.Loading
+                val task = getTask(id)
+                if (task != null) {
+                    _viewState.value = TaskDetailState.Content(
+                        id = task.id,
+                        taskTitle = task.text,
+                        importance = task.importance,
+                        deadline = task.deadline,
+                        isCompleted = task.isCompleted
+                    )
+                } else {
+                    _viewState.value = TaskDetailState.Content()
+                }
+            } catch (e: Exception) {
+                _viewState.value = TaskDetailState.Error(e.message)
+            }
+        }
     }
-
-    fun togglePriority(importance: Importance) {
-        setState { copy(taskItem = taskItem.copy(importance = importance)) }
-    }
-
-    private fun onDeadlineChange(newDeadline: Date?) {
-        setState { copy(taskItem = taskItem.copy(deadline = newDeadline)) }
-    }
-
 
     private fun saveTask(todoItemUiModel: TodoItemUiModel?) {
         val currentTask = todoItemUiModel ?: return
-        viewModelScope.launch(handler) {
-//            if (!isActive) return@launch
+        viewModelScope.launch {
             try {
                 if (getTask(currentTask.id) == null) {
                     addTaskUseCase(currentTask)
@@ -83,70 +82,43 @@ class TaskDetailViewModel(
                     updateTaskUseCase(currentTask)
                 }
             } catch (e: Exception) {
-                setState { copy(error = "Невозможно добавить задачу. ${e.message}") }
+                _viewState.value = TaskDetailState.Error(message = "Невозможно добавить задачу. ${e.message}")
             }
-
         }
+
     }
 
-    private fun deleteTask(taskId: String?) {
-        viewModelScope.launch(handler) {
-            if (taskId != null) {
+    private fun deleteTask(taskId: String) {
+        viewModelScope.launch {
+            try {
                 deleteTaskUseCase(taskId)
-            } else {
-                setState { copy(error = "Невозможно удалить задачу") }
+            } catch (e: Exception) {
+                _viewState.value = TaskDetailState.Error(message = "Невозможно удалить задачу: ${e.message}")
             }
         }
     }
 
+    private fun setError(message: String?) {
+        _viewState.value = TaskDetailState.Error(message)
+    }
+
+    private fun onTaskTitleChanged(newTitle: String) {
+        val currentState = _viewState.value as TaskDetailState.Content
+        _viewState.value = currentState.copy(taskTitle = newTitle)
+    }
+
+    fun togglePriority(importance: Importance) {
+        val currentState = _viewState.value as TaskDetailState.Content
+        _viewState.value = currentState.copy(importance = importance)
+    }
+
+    private fun onDeadlineChange(newDeadline: Date?) {
+        val currentState = _viewState.value as TaskDetailState.Content
+        _viewState.value = currentState.copy(deadline = newDeadline)
+    }
 
     fun formatDate(date: Date?): String? =
         date?.let { SimpleDateFormat("dd MMMM yyyy", Locale.getDefault()).format(it) }
 
 
 }
-
-/*
-         Saving/Editing TaskItems without database!
-
- fun saveTask(text: String, importance: Importance, deadline: Date?) {
-    viewModelScope.launch {
-        if (text.isBlank()) return@launch
-
-        val newTask = TaskItem(
-            id = null, // Repository will set this
-            text = text,
-            importance = importance,
-            deadline = null, // You can add deadline handling later
-            isCompleted = false,
-            createdAt = Date()
-        )
-
-        todoRepository.addTask(newTask)
-    }
-}
-
-private val _taskItemState = MutableStateFlow(AddTaskState())
-val taskItemState = _taskItemState.asStateFlow()
-
-
-fun saveTask1() {
-    val currentState = _taskItemState.value
-    val task = TaskItem(
-        id = currentState.id,
-        text = currentState.text,
-        importance = currentState.importance,
-        deadline = currentState.deadline,
-        isCompleted = currentState.isCompleted,
-        createdAt = currentState.createdAt
-    )
-
-    if (task.id == null) {
-        viewModelScope.launch {
-            todoRepository.saveTask(task) // Adding new task
-        }
-    } else {
-        todoRepository.updateTask(task) // Updating existing task
-    }
-}
-*/

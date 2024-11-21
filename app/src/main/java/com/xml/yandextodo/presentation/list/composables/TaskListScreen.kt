@@ -26,11 +26,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.flowWithLifecycle
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.swiperefresh.SwipeRefreshState
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
@@ -40,7 +37,6 @@ import com.xml.yandextodo.presentation.add.composables.LoadingContent
 import com.xml.yandextodo.presentation.list.view_model.TaskListEvent
 import com.xml.yandextodo.presentation.list.view_model.TaskListState
 import com.xml.yandextodo.presentation.list.view_model.TaskListViewModel
-import com.xml.yandextodo.presentation.main.TASK_ID_KEY
 import com.xml.yandextodo.presentation.screens.Screen
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -62,9 +58,6 @@ fun TaskListScreen(
 
     LaunchedEffect(Unit) {
         viewModel.subscribeToEvents()
-    }
-    LaunchedEffect(Unit) {
-        viewModel.setEvent(TaskListEvent.RefreshTodos)
     }
 
     when (viewState) {
@@ -160,12 +153,12 @@ fun TaskListContent(
 }
 
 @Composable
-fun AddButton(
+private fun AddButton(
     navController: NavHostController,
 ) {
     FloatingActionButton(
         modifier = Modifier.padding(end = 12.dp, bottom = 40.dp),
-        onClick = { navController.navigate(Screen.TaskDetail.createRoute(TASK_ID_KEY)) },
+        onClick = { navController.navigate(Screen.TaskDetail.createRoute("")) },
         shape = RoundedCornerShape(35.dp),
         content = {
             Icon(

@@ -49,7 +49,7 @@ val mainModule = module {
     factory { GetTaskListUseCase(repository = get<TodoRepository>()) }
     factory { GetTaskUseCase(repository = get<TodoRepository>()) }
 
-    factory { CheckInternetConnectivityRepository(context = get()) }
+    single { CheckInternetConnectivityRepository(context = get()) }
 
     viewModel { TaskDetailViewModel(get(), get(), get(), get()) }
 

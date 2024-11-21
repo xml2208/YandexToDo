@@ -67,7 +67,6 @@ fun TaskDetailScreen(
             TaskDetailContent(
                 viewState = viewState,
                 setEvent = viewModel::setEvent,
-                popBackStack = navController::popBackStack,
                 taskId = taskId,
                 navigateUp = { navController.navigateUp() },
                 togglePriority = viewModel::togglePriority,
@@ -78,6 +77,10 @@ fun TaskDetailScreen(
         is TaskDetailState.Error -> {
             Toast.makeText(context, viewState.message, Toast.LENGTH_SHORT).show()
         }
+
+        TaskDetailState.OnDone -> {
+            navController.navigateUp()
+        }
     }
 }
 
@@ -86,7 +89,6 @@ private fun TaskDetailContent(
     viewState: TaskDetailState.Content,
     taskId: String,
     setEvent: (TaskDetailEvent) -> Unit,
-    popBackStack: () -> Unit,
     navigateUp: () -> Unit,
     togglePriority: (Importance) -> Unit,
     formatDate: (Date?) -> String?,
@@ -111,7 +113,6 @@ private fun TaskDetailContent(
                             )
                         )
                     )
-                    popBackStack()
                 } else {
                     setEvent(TaskDetailEvent.OnError(message = "Имя задачи пустое, пожалуйста, добавьте"))
                 }
@@ -162,10 +163,11 @@ private fun TaskDetailContent(
         DeleteTaskRow(
             modifier = Modifier.padding(vertical = 20.dp, horizontal = 16.dp),
             deleteTask = {
-                popBackStack()
-                setEvent(TaskDetailEvent.DeleteTask(taskId))
+                if (taskId.isNotBlank()) {
+                    setEvent(TaskDetailEvent.DeleteTask(taskId))
+                }
             },
-            isTextFieldEmpty = viewState.taskTitle.isEmpty(),
+            isEnabled = taskId.isNotBlank(),
         )
     }
 }
@@ -230,19 +232,19 @@ private fun PriorityDropdownMenu(
 
 @Composable
 private fun DeleteTaskRow(
+    isEnabled: Boolean,
     deleteTask: () -> Unit,
-    isTextFieldEmpty: Boolean,
     modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier
-            .clickable { deleteTask() }
+            .clickable(enabled = isEnabled) { deleteTask() }
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Icon(
             painter = painterResource(R.drawable.ic_delete),
-            tint = if (isTextFieldEmpty) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.errorContainer,
+            tint = if (isEnabled) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.onErrorContainer,
             contentDescription = null,
         )
 
@@ -250,7 +252,7 @@ private fun DeleteTaskRow(
             text = stringResource(R.string.delete),
             fontWeight = FontWeight.W400,
             fontSize = 16.sp,
-            color = if (isTextFieldEmpty) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.errorContainer
+            color = if (isEnabled) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.onErrorContainer
         )
     }
 }
@@ -267,6 +269,6 @@ private fun AddTaskScreenPreview() {
 private fun DeleteTaskRowPreview() {
     DeleteTaskRow(
         deleteTask = {},
-        isTextFieldEmpty = true,
+        isEnabled = false,
     )
 }

@@ -76,14 +76,17 @@ class TaskDetailViewModel(
         val currentTask = todoItemUiModel ?: return
         viewModelScope.launch {
             try {
+                _viewState.value = TaskDetailState.Loading
                 if (getTask(currentTask.id) == null) {
                     addTaskUseCase(currentTask)
                 } else {
                     updateTaskUseCase(currentTask)
                 }
+                _viewState.value = TaskDetailState.OnDone
             } catch (e: Exception) {
                 _viewState.value = TaskDetailState.Error(message = "Невозможно добавить задачу. ${e.message}")
             }
+
         }
 
     }
@@ -92,8 +95,10 @@ class TaskDetailViewModel(
         viewModelScope.launch {
             try {
                 deleteTaskUseCase(taskId)
+                _viewState.value = TaskDetailState.OnDone
             } catch (e: Exception) {
-                _viewState.value = TaskDetailState.Error(message = "Невозможно удалить задачу: ${e.message}")
+                _viewState.value =
+                    TaskDetailState.Error(message = "Невозможно удалить задачу: ${e.message}")
             }
         }
     }

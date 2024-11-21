@@ -1,7 +1,6 @@
 package com.xml.yandextodo.presentation.list.view_model
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.xml.yandextodo.domain.model.TodoItemUiModel
 import com.xml.yandextodo.domain.usecases.CheckInternetConnectivityRepository
@@ -42,6 +41,7 @@ class TaskListViewModel(
                 }
             }
         }
+        refreshTodos()
     }
 
     fun setEvent(event: TaskListEvent) {

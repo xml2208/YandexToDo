@@ -26,4 +26,5 @@ sealed class TaskDetailState {
         val isCompleted: Boolean = false,
     ) : TaskDetailState()
     data class Error(val message: String?) : TaskDetailState()
+    data object OnDone : TaskDetailState()
 }

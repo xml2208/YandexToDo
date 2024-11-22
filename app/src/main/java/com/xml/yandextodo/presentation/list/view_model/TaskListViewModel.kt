@@ -17,7 +17,7 @@ class TaskListViewModel(
     private val taskListUseCase: GetTaskListUseCase,
     private val updateTaskUseCase: UpdateTaskUseCase,
     private val getTaskUseCase: GetTaskUseCase,
-    checkInternetConnectivityUseCase: CheckInternetConnectivityRepository
+    internetConnectivityRepository: CheckInternetConnectivityRepository
 ) : ViewModel() {
 
     private val _viewState = MutableStateFlow<TaskListState>(TaskListState.Loading)
@@ -25,7 +25,7 @@ class TaskListViewModel(
 
     private val _events = MutableSharedFlow<TaskListEvent>()
 
-    val internetAvailable = checkInternetConnectivityUseCase.observeConnectivity()
+    val isInternetAvailable = internetConnectivityRepository.observeConnectivity()
 
     init {
         refreshTodos()

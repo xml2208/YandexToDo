@@ -49,7 +49,7 @@ fun TaskListScreen(
 ) {
     val listState = rememberLazyListState()
     val viewState = viewModel.viewState.collectAsStateWithLifecycle().value
-    val isInternetAvailable = viewModel.internetAvailable.collectAsState(false).value
+    val isInternetAvailable = viewModel.isInternetAvailable.collectAsState(false).value
     val isToolbarVisible by remember { derivedStateOf { listState.firstVisibleItemScrollOffset == 0 } }
     val snackBarHostState = remember { SnackbarHostState() }
     val refreshState = rememberSwipeRefreshState(isRefreshing = viewState == TaskListState.Loading)

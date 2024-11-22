@@ -58,7 +58,7 @@ val mainModule = module {
             taskListUseCase = get<GetTaskListUseCase>(),
             updateTaskUseCase = get<UpdateTaskUseCase>(),
             getTaskUseCase = get<GetTaskUseCase>(),
-            checkInternetConnectivityUseCase = get<CheckInternetConnectivityRepository>()
+            internetConnectivityRepository = get<CheckInternetConnectivityRepository>()
         )
     }
 

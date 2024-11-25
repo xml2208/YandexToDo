@@ -2,25 +2,29 @@ package com.xml.yandextodo.presentation.add.view_model
 
 import com.xml.yandextodo.domain.model.Importance
 import com.xml.yandextodo.domain.model.TodoItemUiModel
-import com.xml.yandextodo.presentation.base.CoreEvent
-import com.xml.yandextodo.presentation.base.CoreState
 import java.util.Date
+import kotlin.random.Random
 
-class TaskDetailContract {
+sealed class TaskDetailEvent {
+    data class OnLoad(val id: String) : TaskDetailEvent()
+    data class OnSave(val tasItemUiModel: TodoItemUiModel) : TaskDetailEvent()
+    data class OnTitleValueChanged(val text: String) : TaskDetailEvent()
+    data class OnImportanceToggleChanged(val importance: Importance) : TaskDetailEvent()
+    data class OnDeadlineChanged(val deadline: Date?) : TaskDetailEvent()
+    data class DeleteTask(val id: String) : TaskDetailEvent()
+    data class OnError(val message: String?) : TaskDetailEvent()
+}
 
-    sealed class TaskDetailEvent : CoreEvent {
-        data class OnLoad(val id: String) : TaskDetailEvent()
-        data class OnSave(val tasItemUiModel: TodoItemUiModel) : TaskDetailEvent()
-        data class OnTitleValueChanged(val text: String): TaskDetailEvent()
-        data class OnImportanceToggleChanged(val importance: Importance): TaskDetailEvent()
-        data class OnDeadlineChanged(val deadline: Date?): TaskDetailEvent()
-        data class DeleteTask(val id: String): TaskDetailEvent()
-    }
+sealed class TaskDetailState {
 
-    data class State(
-        val loading: Boolean,
-        val taskItem: TodoItemUiModel,
-        val error: String?,
-    ) : CoreState
-
+    data object Loading : TaskDetailState()
+    data class Content(
+        val id: String = Random.nextInt().toString(),
+        val taskTitle: String = "",
+        val importance: Importance = Importance.BASIC,
+        val deadline: Date? = null,
+        val isCompleted: Boolean = false,
+    ) : TaskDetailState()
+    data class Error(val message: String?,val isNetworkError: Boolean = false) : TaskDetailState()
+    data object OnDone : TaskDetailState()
 }

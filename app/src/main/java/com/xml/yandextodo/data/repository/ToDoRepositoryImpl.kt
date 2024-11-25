@@ -1,14 +1,16 @@
 package com.xml.yandextodo.data.repository
 
-import android.util.Log
 import com.xml.yandextodo.data.local.datasource.LocalDataSource
+import com.xml.yandextodo.data.mapper.toDomainList
 import com.xml.yandextodo.data.mapper.toDto
+import com.xml.yandextodo.data.mapper.toEntity
 import com.xml.yandextodo.data.mapper.toUi
 import com.xml.yandextodo.data.mapper.toUiList
 import com.xml.yandextodo.data.model.TaskRequest
 import com.xml.yandextodo.domain.model.TodoItemUiModel
 import com.xml.yandextodo.data.remote.datasource.RemoteDataSource
 import com.xml.yandextodo.domain.repository.TodoRepository
+import kotlinx.coroutines.flow.first
 
 class ToDoRepositoryImpl(
     private val remoteDataSource: RemoteDataSource,
@@ -17,16 +19,15 @@ class ToDoRepositoryImpl(
 
     private var lastKnownRevision = 0
 
-    override suspend fun getAllTasks(): List<TodoItemUiModel> =
+    override suspend fun getAllTasks(onGettingFromLocal: (String) -> Unit): List<TodoItemUiModel> =
         try {
             val response = remoteDataSource.getAllTasks()
             lastKnownRevision = response.revision
-            Log.d("TAG", "getAllTasks: ${response.list.toUiList()}")
+            localDataSource.insertTaskList(response.list.toDomainList())
             response.list.toUiList()
-//            localDataSource.getTaskList().map { it.toUi() }
         } catch (e: Exception) {
-            e.printStackTrace()
-            emptyList()
+            onGettingFromLocal("Получено из локальной базы данных")
+            localDataSource.getTaskList().first().toUi()
         }
 
 
@@ -35,6 +36,7 @@ class ToDoRepositoryImpl(
         try {
             remoteDataSource.addTask(lastKnownRevision, request)
         } catch (e: Exception) {
+            localDataSource.insertTask(task.toEntity())
             e.printStackTrace()
         }
     }
@@ -62,26 +64,4 @@ class ToDoRepositoryImpl(
     override suspend fun deleteTask(id: String) {
         remoteDataSource.deleteTask(id, revision = lastKnownRevision)
     }
-
-
-//    override suspend fun refreshTasks() {
-//        try {
-//            val response = remoteDataSource.getAllTasks()
-//            if (response.status == "ok") {
-//                localDataSource.deleteAll()
-//                localDataSource.insertTaskList(response.list.toDomainList())
-//            }
-//        } catch (e: Exception) {
-//            e.printStackTrace()
-//        }
-//    }
-
-
-//    private fun getTaskEntity(id: Long?): TaskItemEntity? {
-//        return if (id != -1L) {
-//            taskDao.getTaskItem(id)
-//        } else {
-//            TodoItem.initialTaskEntity
-//        }
-//    }
 }

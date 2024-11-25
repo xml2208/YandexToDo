@@ -4,7 +4,7 @@ import com.xml.yandextodo.domain.model.TodoItemUiModel
 
 interface TodoRepository {
 
-    suspend fun getAllTasks(): List<TodoItemUiModel>
+    suspend fun getAllTasks(onGettingFromLocal:(String) -> Unit): List<TodoItemUiModel>
 
     suspend fun addTask(task: TodoItemUiModel)
 

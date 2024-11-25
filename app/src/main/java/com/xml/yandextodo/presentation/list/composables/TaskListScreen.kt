@@ -1,7 +1,6 @@
 package com.xml.yandextodo.presentation.list.composables
 
 import android.annotation.SuppressLint
-import android.widget.Toast
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,20 +19,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.xml.yandextodo.R
 import com.xml.yandextodo.presentation.add.composables.LoadingContent
-import com.xml.yandextodo.presentation.list.view_model.TaskListContract
+import com.xml.yandextodo.presentation.list.view_model.TaskListEvent
+import com.xml.yandextodo.presentation.list.view_model.TaskListState
 import com.xml.yandextodo.presentation.list.view_model.TaskListViewModel
-import com.xml.yandextodo.presentation.main.TASK_ID_KEY
 import com.xml.yandextodo.presentation.screens.Screen
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -45,21 +42,15 @@ fun TaskListScreen(
     onThemeUpdated: () -> Unit,
     viewModel: TaskListViewModel = koinViewModel(),
 ) {
-    val isInternetAvailable by viewModel.internetAvailable.collectAsStateWithLifecycle()
-    val viewState = viewModel.viewState.value
     val listState = rememberLazyListState()
+    val viewState = viewModel.viewState.collectAsStateWithLifecycle().value
     val isToolbarVisible by remember { derivedStateOf { listState.firstVisibleItemScrollOffset == 0 } }
     val snackBarHostState = remember { SnackbarHostState() }
+    val refreshState = rememberSwipeRefreshState(isRefreshing = viewState == TaskListState.Loading)
     val scope = rememberCoroutineScope()
-    val refreshState = rememberSwipeRefreshState(isRefreshing = viewState.loading)
-    val navBackStackEntry = navController.currentBackStackEntryAsState()
-    val context = LocalContext.current
 
-    LaunchedEffect(key1 = navBackStackEntry.value) {
-        val currentRoute = navController.currentBackStackEntry?.destination?.route
-        if (currentRoute == Screen.ToDoList.route) {
-            viewModel.setEvent(TaskListContract.TaskListEvent.RefreshTodos)
-        }
+    LaunchedEffect(Unit) {
+        viewModel.subscribeToEvents()
     }
 
     Scaffold(
@@ -72,68 +63,58 @@ fun TaskListScreen(
                 ),
                 isToolbarVisible = isToolbarVisible,
                 showCompleted = false,
-                tasks = viewState.taskList,
+                tasks = emptyList(),
                 onHideCompletedClicked = {},
                 onThemeUpdated = onThemeUpdated,
             )
         },
         snackbarHost = { SnackbarHost(snackBarHostState) },
         floatingActionButton = { AddButton(navController) }) { padding ->
-        when {
-            viewState.loading -> {
-                LoadingContent(scaffoldPadding = padding)
+        when (viewState) {
+            TaskListState.Loading -> LoadingContent(modifier = Modifier.padding(padding))
+
+            is TaskListState.Content -> {
+                TaskListContainer(
+                    tasks = viewState.taskList,
+                    listState = listState,
+                    onCheckedChange = { viewModel.setEvent(TaskListEvent.OnCheckedChange(it)) },
+                    onEditTask = {
+                        viewModel.setEvent(TaskListEvent.GetTask(id = it))
+                        navController.navigate(Screen.TaskDetail.createRoute(taskId = it))
+                    },
+                    onRefresh = { viewModel.setEvent(TaskListEvent.RefreshTodos) },
+                    swipeRefreshState = refreshState,
+                    modifier = Modifier
+                        .padding(padding)
+                        .padding(8.dp),
+                )
             }
 
-            !isInternetAvailable -> {
+            is TaskListState.Error -> {
                 scope.launch {
                     snackBarHostState.showSnackbar(
                         withDismissAction = true,
-                        message = "You are offline",
-                        actionLabel = "Retry",
-                        duration = SnackbarDuration.Indefinite
+                        message = viewState.error.orEmpty(),
+                        actionLabel = if (viewState.isNetworkError) "Retry" else null,
+                        duration = if (viewState.isNetworkError) SnackbarDuration.Long else SnackbarDuration.Short
                     ).also { result ->
                         if (result == SnackbarResult.ActionPerformed) {
-                            viewModel.setEvent(TaskListContract.TaskListEvent.RefreshTodos)
+                            viewModel.setEvent(TaskListEvent.RefreshTodos)
                         }
                     }
                 }
             }
-
-            viewState.error == null -> {
-                TaskListContainer(
-                    tasks = viewState.taskList,
-                    listState = listState,
-                    onCheckedChange = {
-                        viewModel.setEvent(
-                            TaskListContract.TaskListEvent.OnCheckedChange(it)
-                        )
-                    },
-                    onEditTask = {
-                        viewModel.setEvent(TaskListContract.TaskListEvent.GetTask(id = it))
-                        navController.navigate(Screen.TaskDetail.createRoute(taskId = it))
-                    },
-                    onRefresh = { viewModel.setEvent(TaskListContract.TaskListEvent.RefreshTodos) },
-                    swipeRefreshState = refreshState,
-                    modifier = Modifier
-                        .padding(padding)
-                        .padding(8.dp)
-                )
-            }
-
-            else -> Toast.makeText(context, viewState.error, Toast.LENGTH_LONG).show()
-
         }
-
     }
 }
 
 @Composable
-fun AddButton(
+private fun AddButton(
     navController: NavHostController,
 ) {
     FloatingActionButton(
         modifier = Modifier.padding(end = 12.dp, bottom = 40.dp),
-        onClick = { navController.navigate(Screen.TaskDetail.createRoute(TASK_ID_KEY)) },
+        onClick = { navController.navigate(Screen.TaskDetail.createRoute("")) },
         shape = RoundedCornerShape(35.dp),
         content = {
             Icon(

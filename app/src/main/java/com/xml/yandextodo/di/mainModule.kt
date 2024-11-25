@@ -11,7 +11,7 @@ import com.xml.yandextodo.data.remote.datasource.RemoteDataSource
 import com.xml.yandextodo.domain.repository.TodoRepository
 import com.xml.yandextodo.data.repository.ToDoRepositoryImpl
 import com.xml.yandextodo.domain.usecases.AddTaskUseCase
-import com.xml.yandextodo.domain.usecases.CheckInternetConnectivityUseCase
+import com.xml.yandextodo.domain.usecases.CheckInternetConnectivityRepository
 import com.xml.yandextodo.domain.usecases.DeleteTaskUseCase
 import com.xml.yandextodo.domain.usecases.GetTaskListUseCase
 import com.xml.yandextodo.domain.usecases.GetTaskUseCase
@@ -26,6 +26,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 const val TIME_OUT = 30L
+const val BASE_URL = "https://hive.mrdekk.ru/todo/"
 
 val mainModule = module {
 
@@ -49,16 +50,22 @@ val mainModule = module {
     factory { GetTaskListUseCase(repository = get<TodoRepository>()) }
     factory { GetTaskUseCase(repository = get<TodoRepository>()) }
 
-    single { CheckInternetConnectivityUseCase(context = get()) }
+    single { CheckInternetConnectivityRepository(context = get()) }
 
-    viewModel { TaskDetailViewModel(get(), get(), get(), get()) }
+    viewModel { TaskDetailViewModel(
+        getTaskUseCase = get<GetTaskUseCase>(),
+        updateTaskUseCase = get<UpdateTaskUseCase>(),
+        addTaskUseCase = get<AddTaskUseCase>(),
+        deleteTaskUseCase = get<DeleteTaskUseCase>(),
+        internetConnectivityRepository = get<CheckInternetConnectivityRepository>()
+    ) }
 
     viewModel {
         TaskListViewModel(
             taskListUseCase = get<GetTaskListUseCase>(),
             updateTaskUseCase = get<UpdateTaskUseCase>(),
             getTaskUseCase = get<GetTaskUseCase>(),
-            checkInternetConnectivityUseCase = get<CheckInternetConnectivityUseCase>()
+            internetConnectivityRepository = get<CheckInternetConnectivityRepository>()
         )
     }
 
@@ -86,7 +93,7 @@ private fun provideOkhttp(): OkHttpClient {
 
 private fun provideRetrofit(client: OkHttpClient): Retrofit {
     return Retrofit.Builder()
-        .baseUrl("https://hive.mrdekk.ru/todo/")
+        .baseUrl(BASE_URL)
         .addConverterFactory(GsonConverterFactory.create())
         .client(client)
         .build()

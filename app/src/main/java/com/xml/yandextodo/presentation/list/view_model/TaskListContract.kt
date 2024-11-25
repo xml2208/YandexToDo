@@ -14,6 +14,6 @@ sealed class TaskListState {
 
     data class Content(val taskList: List<TodoItemUiModel>) : TaskListState()
 
-    data class Error(val error: String?) : TaskListState()
+    data class Error(val error: String?, val isNetworkError: Boolean = false) : TaskListState()
 
 }

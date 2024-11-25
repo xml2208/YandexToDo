@@ -1,6 +1,6 @@
 package com.xml.yandextodo.presentation.add.composables
 
-import android.widget.Toast
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +17,11 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,9 +29,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -42,16 +47,19 @@ import com.xml.yandextodo.domain.model.TodoItemUiModel
 import com.xml.yandextodo.presentation.add.view_model.TaskDetailEvent
 import com.xml.yandextodo.presentation.add.view_model.TaskDetailState
 import com.xml.yandextodo.presentation.add.view_model.TaskDetailViewModel
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import java.util.Date
 
+@SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun TaskDetailScreen(
     navController: NavHostController,
     taskId: String,
     viewModel: TaskDetailViewModel = koinViewModel(),
 ) {
-    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackBarHostState = remember { SnackbarHostState() }
     val viewState = viewModel.viewState.collectAsState().value
 
     LaunchedEffect(key1 = taskId) {
@@ -59,27 +67,43 @@ fun TaskDetailScreen(
         viewModel.setEvent(TaskDetailEvent.OnLoad(id = taskId))
     }
 
-    when (viewState) {
-        TaskDetailState.Loading -> {
-            LoadingContent(modifier = Modifier.padding(top = 24.dp))
-        }
-        is TaskDetailState.Content -> {
-            TaskDetailContent(
-                viewState = viewState,
-                setEvent = viewModel::setEvent,
-                taskId = taskId,
-                navigateUp = { navController.navigateUp() },
-                togglePriority = viewModel::togglePriority,
-                formatDate = viewModel::formatDate,
-            )
-        }
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackBarHostState) },
+    ) { padding ->
+        when (viewState) {
+            TaskDetailState.Loading -> {
+                LoadingContent(modifier = Modifier.padding(top = 24.dp))
+            }
 
-        is TaskDetailState.Error -> {
-            Toast.makeText(context, viewState.message, Toast.LENGTH_SHORT).show()
-        }
+            is TaskDetailState.Content -> {
+                TaskDetailContent(
+                    viewState = viewState,
+                    setEvent = viewModel::setEvent,
+                    taskId = taskId,
+                    navigateUp = { navController.navigateUp() },
+                    togglePriority = viewModel::togglePriority,
+                    formatDate = viewModel::formatDate,
+                )
+            }
 
-        TaskDetailState.OnDone -> {
-            navController.navigateUp()
+            is TaskDetailState.Error -> {
+                scope.launch {
+                    snackBarHostState.showSnackbar(
+                        withDismissAction = true,
+                        message = viewState.message.orEmpty(),
+                        actionLabel = if (viewState.isNetworkError) "Retry" else null,
+                        duration = SnackbarDuration.Indefinite
+                    ).also { result ->
+                        if (result == SnackbarResult.ActionPerformed) {
+                            viewModel.setEvent(TaskDetailEvent.OnLoad(id = taskId))
+                        }
+                    }
+                }
+            }
+
+            TaskDetailState.OnDone -> {
+                navController.navigateUp()
+            }
         }
     }
 }

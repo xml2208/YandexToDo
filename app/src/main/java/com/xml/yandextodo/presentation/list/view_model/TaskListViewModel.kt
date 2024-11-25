@@ -1,5 +1,6 @@
 package com.xml.yandextodo.presentation.list.view_model
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xml.yandextodo.domain.model.TodoItemUiModel
@@ -17,18 +18,34 @@ class TaskListViewModel(
     private val taskListUseCase: GetTaskListUseCase,
     private val updateTaskUseCase: UpdateTaskUseCase,
     private val getTaskUseCase: GetTaskUseCase,
-    internetConnectivityRepository: CheckInternetConnectivityRepository
+    private val internetConnectivityRepository: CheckInternetConnectivityRepository
 ) : ViewModel() {
 
     private val _viewState = MutableStateFlow<TaskListState>(TaskListState.Loading)
     val viewState get() = _viewState.asStateFlow()
 
+    private val isConnected = MutableStateFlow(false)
+
     private val _events = MutableSharedFlow<TaskListEvent>()
 
-    val isInternetAvailable = internetConnectivityRepository.observeConnectivity()
-
     init {
+        subscribeToConnectivity()
         refreshTodos()
+    }
+
+    private fun subscribeToConnectivity() {
+        viewModelScope.launch {
+            internetConnectivityRepository.connectedFlow.collect { netState ->
+                isConnected.value = netState
+                if (netState) {
+                    refreshTodos()
+                } else {
+                    setErrorState(
+                        errorMessage = "Нет подключения к интернету",
+                    )
+                }
+            }
+        }
     }
 
     fun subscribeToEvents() {
@@ -51,15 +68,18 @@ class TaskListViewModel(
     }
 
     private fun refreshTodos() {
+        Log.d("TAG", "refreshTodos: ")
         _viewState.value = TaskListState.Loading
         try {
             viewModelScope.launch {
-                _viewState.value = TaskListState.Content(taskList = taskListUseCase())
+                val taskList = taskListUseCase(onGettingFromLocal = ::setErrorState)
+                _viewState.value = TaskListState.Content(taskList = taskList)
             }
         } catch (e: Exception) {
-            _viewState.value = TaskListState.Error(error = "Can not refresh: ${e.message}")
+            setErrorState(errorMessage = "Невозможно обновить: ${e.message}")
         }
     }
+
 
     private fun toggleTaskCompletion(task: TodoItemUiModel) {
         viewModelScope.launch {
@@ -68,15 +88,21 @@ class TaskListViewModel(
         }
     }
 
+    private fun setErrorState(errorMessage: String, isNetworkError: Boolean = true) {
+        _viewState.value = TaskListState.Error(errorMessage, isNetworkError = isNetworkError)
+    }
+
     private fun getTask(id: String?) {
         if (id != null) {
             viewModelScope.launch {
                 try {
                     getTaskUseCase(id)
                 } catch (e: Exception) {
-                    TaskListState.Error(error = "EXCEPTION: ${e.message}")
+                    setErrorState(errorMessage = "EXCEPTION: ${e.message}", false)
                 }
             }
+        } else {
+            setErrorState("Task не найдена, id=null", false)
         }
     }
 }

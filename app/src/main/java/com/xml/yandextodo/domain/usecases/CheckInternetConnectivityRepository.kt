@@ -5,13 +5,15 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class CheckInternetConnectivityRepository(context: Context) {
-    private val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    private val connectivityManager =
+        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+    private val _connectedFlow = MutableStateFlow(isConnected())
+    val connectedFlow = _connectedFlow.asStateFlow()
 
     private fun isConnected(): Boolean = connectivityManager.activeNetwork?.let { network ->
         connectivityManager.getNetworkCapabilities(network)?.run {
@@ -21,18 +23,25 @@ class CheckInternetConnectivityRepository(context: Context) {
         } ?: false
     } ?: false
 
-    fun observeConnectivity(): Flow<Boolean> = callbackFlow {
+    init {
+        observeConnectivity()
+    }
+
+    private fun observeConnectivity() {
         val networkCallback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
-                trySend(true)
+                _connectedFlow.value = true
             }
 
             override fun onLost(network: Network) {
-                trySend(false)
+                _connectedFlow.value = false
             }
 
-            override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
-                trySend(networkCapabilities.hasInternetCapability())
+            override fun onCapabilitiesChanged(
+                network: Network,
+                networkCapabilities: NetworkCapabilities
+            ) {
+                networkCapabilities.hasInternetCapability()
             }
         }
 
@@ -41,13 +50,7 @@ class CheckInternetConnectivityRepository(context: Context) {
             .build()
 
         connectivityManager.registerNetworkCallback(request, networkCallback)
-
-        trySend(isConnected())
-
-        awaitClose {
-            connectivityManager.unregisterNetworkCallback(networkCallback)
-        }
-    }.distinctUntilChanged()
+    }
 
     private fun NetworkCapabilities.hasInternetCapability(): Boolean =
         hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&

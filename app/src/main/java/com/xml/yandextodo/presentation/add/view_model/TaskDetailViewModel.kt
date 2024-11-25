@@ -5,13 +5,16 @@ import androidx.lifecycle.viewModelScope
 import com.xml.yandextodo.domain.model.Importance
 import com.xml.yandextodo.domain.model.TodoItemUiModel
 import com.xml.yandextodo.domain.usecases.AddTaskUseCase
+import com.xml.yandextodo.domain.usecases.CheckInternetConnectivityRepository
 import com.xml.yandextodo.domain.usecases.DeleteTaskUseCase
 import com.xml.yandextodo.domain.usecases.GetTaskUseCase
 import com.xml.yandextodo.domain.usecases.UpdateTaskUseCase
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -21,12 +24,25 @@ class TaskDetailViewModel(
     private val updateTaskUseCase: UpdateTaskUseCase,
     private val addTaskUseCase: AddTaskUseCase,
     private val deleteTaskUseCase: DeleteTaskUseCase,
+    private val internetConnectivityRepository: CheckInternetConnectivityRepository,
 ) : ViewModel() {
 
     private val _viewState = MutableStateFlow<TaskDetailState>(TaskDetailState.Loading)
     val viewState get() = _viewState.asStateFlow()
 
     private val _events = MutableSharedFlow<TaskDetailEvent>()
+    private val sad = MutableStateFlow(false)
+
+    init {
+        viewModelScope.launch {
+            internetConnectivityRepository.connectedFlow.collectLatest {
+                sad.value = it
+                if (!it) {
+                    _viewState.value = TaskDetailState.Error("Нет подключения к интернету", true)
+                }
+            }
+        }
+    }
 
     fun subscribeToEvents() {
         viewModelScope.launch {
@@ -48,26 +64,41 @@ class TaskDetailViewModel(
         viewModelScope.launch { _events.emit(event) }
     }
 
+    private fun setErrorState(message: String, isNetworkError: Boolean = false) {
+        _viewState.value = TaskDetailState.Error(message = message, isNetworkError = isNetworkError)
+    }
+
     private suspend fun getTask(id: String) = getTaskUseCase(id)
 
     private fun loadTask(id: String) {
+        _viewState.value = TaskDetailState.Loading
         viewModelScope.launch {
             try {
-                _viewState.value = TaskDetailState.Loading
-                val task = getTask(id)
-                if (task != null) {
-                    _viewState.value = TaskDetailState.Content(
-                        id = task.id,
-                        taskTitle = task.text,
-                        importance = task.importance,
-                        deadline = task.deadline,
-                        isCompleted = task.isCompleted
-                    )
-                } else {
+                if (id.isEmpty()) {
                     _viewState.value = TaskDetailState.Content()
+                    return@launch
+                }
+                val task = getTask(id)
+
+                task?.let {
+                    _viewState.value = TaskDetailState.Content(
+                        id = it.id,
+                        taskTitle = it.text,
+                        importance = it.importance,
+                        deadline = it.deadline,
+                        isCompleted = it.isCompleted
+                    )
+                } ?: run {
+                    setErrorState(
+                        isNetworkError = true,
+                        message = "Задача не найдена, включите Интернет"
+                    )
                 }
             } catch (e: Exception) {
-                _viewState.value = TaskDetailState.Error(e.message)
+                _viewState.value = TaskDetailState.Error(
+                    message = e.message ?: "Произошла ошибка",
+                    isNetworkError = e is IOException
+                )
             }
         }
     }
@@ -84,7 +115,7 @@ class TaskDetailViewModel(
                 }
                 _viewState.value = TaskDetailState.OnDone
             } catch (e: Exception) {
-                _viewState.value = TaskDetailState.Error(message = "Невозможно добавить задачу. ${e.message}")
+                setErrorState(message = "Невозможно добавить задачу. ${e.message}")
             }
 
         }
@@ -97,8 +128,7 @@ class TaskDetailViewModel(
                 deleteTaskUseCase(taskId)
                 _viewState.value = TaskDetailState.OnDone
             } catch (e: Exception) {
-                _viewState.value =
-                    TaskDetailState.Error(message = "Невозможно удалить задачу: ${e.message}")
+                setErrorState(message = "Невозможно удалить задачу: ${e.message}")
             }
         }
     }
@@ -113,12 +143,12 @@ class TaskDetailViewModel(
     }
 
     fun togglePriority(importance: Importance) {
-        val currentState = _viewState.value as TaskDetailState.Content
+        val currentState = _viewState.value as? TaskDetailState.Content ?: return
         _viewState.value = currentState.copy(importance = importance)
     }
 
     private fun onDeadlineChange(newDeadline: Date?) {
-        val currentState = _viewState.value as TaskDetailState.Content
+        val currentState = _viewState.value as? TaskDetailState.Content ?: return
         _viewState.value = currentState.copy(deadline = newDeadline)
     }
 

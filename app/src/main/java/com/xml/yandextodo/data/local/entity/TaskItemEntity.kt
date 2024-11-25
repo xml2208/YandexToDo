@@ -6,12 +6,10 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "todo_database")
 data class TaskItemEntity(
-    @PrimaryKey val id: String,
+    @PrimaryKey(autoGenerate = true) val id: Long?,
     @ColumnInfo(name = "text") val text: String,
     @ColumnInfo(name = "importance") val importance: String,
     @ColumnInfo(name = "deadline") val deadline: Long?,
     @ColumnInfo(name = "isCompleted") var isCompleted: Boolean,
     @ColumnInfo(name = "createdAt") val createdAt: Long?,
-    @ColumnInfo(name = "changedAt") val changedAt: Long?,
-    @ColumnInfo(name = "lastUpdatedBy") val lastUpdatedBy: String,
 )

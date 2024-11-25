@@ -26,6 +26,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 const val TIME_OUT = 30L
+const val BASE_URL = "https://hive.mrdekk.ru/todo/"
 
 val mainModule = module {
 
@@ -51,7 +52,13 @@ val mainModule = module {
 
     single { CheckInternetConnectivityRepository(context = get()) }
 
-    viewModel { TaskDetailViewModel(get(), get(), get(), get()) }
+    viewModel { TaskDetailViewModel(
+        getTaskUseCase = get<GetTaskUseCase>(),
+        updateTaskUseCase = get<UpdateTaskUseCase>(),
+        addTaskUseCase = get<AddTaskUseCase>(),
+        deleteTaskUseCase = get<DeleteTaskUseCase>(),
+        internetConnectivityRepository = get<CheckInternetConnectivityRepository>()
+    ) }
 
     viewModel {
         TaskListViewModel(
@@ -86,7 +93,7 @@ private fun provideOkhttp(): OkHttpClient {
 
 private fun provideRetrofit(client: OkHttpClient): Retrofit {
     return Retrofit.Builder()
-        .baseUrl("https://hive.mrdekk.ru/todo/")
+        .baseUrl(BASE_URL)
         .addConverterFactory(GsonConverterFactory.create())
         .client(client)
         .build()

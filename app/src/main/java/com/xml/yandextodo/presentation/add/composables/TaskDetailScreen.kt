@@ -40,7 +40,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import com.xml.yandextodo.R
 import com.xml.yandextodo.domain.model.Importance
 import com.xml.yandextodo.domain.model.TodoItemUiModel
@@ -48,7 +47,6 @@ import com.xml.yandextodo.presentation.add.view_model.TaskDetailEvent
 import com.xml.yandextodo.presentation.add.view_model.TaskDetailState
 import com.xml.yandextodo.presentation.add.view_model.TaskDetailViewModel
 import kotlinx.coroutines.launch
-import org.koin.androidx.compose.koinViewModel
 import java.util.Date
 
 @SuppressLint("CoroutineCreationDuringComposition")
@@ -56,7 +54,7 @@ import java.util.Date
 fun TaskDetailScreen(
     navController: NavHostController,
     taskId: String,
-    viewModel: TaskDetailViewModel = koinViewModel(),
+    viewModel: TaskDetailViewModel,
 ) {
     val scope = rememberCoroutineScope()
     val snackBarHostState = remember { SnackbarHostState() }
@@ -285,7 +283,7 @@ private fun DeleteTaskRow(
 @Preview
 @Composable
 private fun AddTaskScreenPreview() {
-    TaskDetailScreen(navController = rememberNavController(), "")
+//    TaskDetailScreen(navController = rememberNavController(), "")
 }
 
 @Preview(showBackground = true)

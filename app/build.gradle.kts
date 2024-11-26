@@ -61,6 +61,8 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     kapt(libs.androidx.room.compiler)
 //    annotationProcessor("androidx.room:room-compiler:2.6.1")
+    implementation(libs.dagger)
+    kapt(libs.dagger.compiler)
 
 
     //network

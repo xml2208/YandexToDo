@@ -7,8 +7,9 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import javax.inject.Inject
 
-class CheckInternetConnectivityRepository(context: Context) {
+class CheckInternetConnectivityRepository @Inject constructor(context: Context) {
     private val connectivityManager =
         context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 

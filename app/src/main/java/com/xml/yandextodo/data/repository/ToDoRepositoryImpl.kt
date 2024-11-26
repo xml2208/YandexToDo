@@ -11,8 +11,9 @@ import com.xml.yandextodo.domain.model.TodoItemUiModel
 import com.xml.yandextodo.data.remote.datasource.RemoteDataSource
 import com.xml.yandextodo.domain.repository.TodoRepository
 import kotlinx.coroutines.flow.first
+import javax.inject.Inject
 
-class ToDoRepositoryImpl(
+class ToDoRepositoryImpl @Inject constructor(
     private val remoteDataSource: RemoteDataSource,
     private val localDataSource: LocalDataSource,
 ) : TodoRepository {

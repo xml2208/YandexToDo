@@ -20,11 +20,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.xml.yandextodo.R
 import com.xml.yandextodo.presentation.add.composables.LoadingContent
@@ -33,14 +31,13 @@ import com.xml.yandextodo.presentation.list.view_model.TaskListState
 import com.xml.yandextodo.presentation.list.view_model.TaskListViewModel
 import com.xml.yandextodo.presentation.screens.Screen
 import kotlinx.coroutines.launch
-import org.koin.androidx.compose.koinViewModel
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @Composable
 fun TaskListScreen(
     navController: NavHostController,
     onThemeUpdated: () -> Unit,
-    viewModel: TaskListViewModel = koinViewModel(),
+    viewModel: TaskListViewModel,
 ) {
     val listState = rememberLazyListState()
     val viewState = viewModel.viewState.collectAsStateWithLifecycle().value
@@ -126,11 +123,12 @@ private fun AddButton(
     )
 }
 
-@Preview
-@Composable
-private fun MainAppUiPreview() {
-    TaskListScreen(
-        navController = rememberNavController(),
-        onThemeUpdated = {}
-    )
-}
+//@Preview
+//@Composable
+//private fun MainAppUiPreview() {
+//    TaskListScreen(
+//        navController = rememberNavController(),
+//        onThemeUpdated = {},
+//        factory =
+//    )
+//}

@@ -18,8 +18,9 @@ import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import javax.inject.Inject
 
-class TaskDetailViewModel(
+class TaskDetailViewModel @Inject constructor(
     private val getTaskUseCase: GetTaskUseCase,
     private val updateTaskUseCase: UpdateTaskUseCase,
     private val addTaskUseCase: AddTaskUseCase,
